@@ -3,6 +3,18 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShadowWriter", "ShadowWriter\ShadowWriter\ShadowWriter.csproj", "{6055F8B2-682B-4B4E-8DF1-2056A4DA9328}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShadowWriter.Sample", "ShadowWriter\ShadowWriter.Sample\ShadowWriter.Sample.csproj", "{471977B5-0022-4801-908E-53877D074356}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ShadowWriter.Tests", "ShadowWriter\ShadowWriter.Tests\ShadowWriter.Tests.csproj", "{0C2D5FA8-4016-4BF5-BBDA-42657717B5BF}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0_Files", "0_Files", "{88F14FCD-4F57-42EB-A4B9-F4125F7BDF76}"
+	ProjectSection(SolutionItems) = preProject
+		Directory.Packages.props = Directory.Packages.props
+		Directory.Build.props = Directory.Build.props
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -10,5 +22,19 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6055F8B2-682B-4B4E-8DF1-2056A4DA9328}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6055F8B2-682B-4B4E-8DF1-2056A4DA9328}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6055F8B2-682B-4B4E-8DF1-2056A4DA9328}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6055F8B2-682B-4B4E-8DF1-2056A4DA9328}.Release|Any CPU.Build.0 = Release|Any CPU
+		{471977B5-0022-4801-908E-53877D074356}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{471977B5-0022-4801-908E-53877D074356}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{471977B5-0022-4801-908E-53877D074356}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{471977B5-0022-4801-908E-53877D074356}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0C2D5FA8-4016-4BF5-BBDA-42657717B5BF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0C2D5FA8-4016-4BF5-BBDA-42657717B5BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0C2D5FA8-4016-4BF5-BBDA-42657717B5BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0C2D5FA8-4016-4BF5-BBDA-42657717B5BF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

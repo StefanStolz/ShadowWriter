@@ -36,11 +36,11 @@
     <PackageReference Include="Shouldly" />
   </ItemGroup>
 
-  <ItemGroup Condition=" '$(IsTestProject)' == 'true'">
-    <Using Include="NUnit.Framework" />
-    <Using Include="NSubstitute" />
-    <Using Include="Shouldly" />
-  </ItemGroup>
+<!--  <ItemGroup Condition=" '$(IsTestProject)' == 'true'">-->
+<!--    <Using Include="NUnit.Framework" />-->
+<!--    <Using Include="NSubstitute" />-->
+<!--    <Using Include="Shouldly" />-->
+<!--  </ItemGroup>-->
 
   <ItemGroup Condition=" '$(Configuration)' == 'Debug' ">
     <GlobalAnalyzerConfigFiles Include="$(MSBuildThisFileDirectory).debug.globalconfig" />
