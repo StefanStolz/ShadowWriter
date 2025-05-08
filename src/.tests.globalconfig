@@ -1,0 +1,5 @@
+is_global = true
+
+global_level = 300
+
+dotnet_diagnostic.CA1861.severity = none 
