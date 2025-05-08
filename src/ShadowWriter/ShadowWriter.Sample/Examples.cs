@@ -1,10 +1,10 @@
+using System;
 using System.Collections.Generic;
 using Entities;
 
 namespace ShadowWriter.Sample;
 
 // This code will not compile until you build the project with the Source Generators
-
 public class Examples {
     // Create generated entities, based on DDD.UbiquitousLanguageRegistry.txt
     public object[] CreateEntities() {
