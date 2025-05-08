@@ -4,7 +4,7 @@
     <Copyright>Copyright © Stefan Stolz, 2025</Copyright>
 
     <RepositoryType>git</RepositoryType>
-    <RepositoryUrl>https://github.com/StefanStolz/MailConcierge2.git</RepositoryUrl>
+    <RepositoryUrl>https://github.com/StefanStolz/ShadowWriter.git</RepositoryUrl>
 
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
