@@ -4,3 +4,11 @@ namespace ShadowWriter.Sample;
 public interface IEmptyInterface {
 
 }
+
+public static class UseNullEmptyInterface {
+    public static void Execute() {
+        var item = NullEmptyInterface.Instance;
+
+
+    }
+}

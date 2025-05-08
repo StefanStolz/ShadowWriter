@@ -1,4 +1,7 @@
+using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -7,7 +10,7 @@ using Microsoft.CodeAnalysis.Text;
 namespace ShadowWriter;
 
 [Generator]
-public sealed class NullObjectGenerator : IIncrementalGenerator{
+public sealed class NullObjectGenerator : IIncrementalGenerator {
     private const string Namespace = "ShadowWriter";
     private const string AttributeName = "NullObjectAttribute";
 
@@ -49,7 +52,127 @@ namespace {Namespace}
     /// <param name="interfaceDeclarations">Nodes annotated with the [NullObject] attribute that trigger the generate action.</param>
     private void GenerateCode(SourceProductionContext context, Compilation compilation,
         ImmutableArray<InterfaceDeclarationSyntax> interfaceDeclarations) {
+        foreach (var interfaceDeclaration in interfaceDeclarations) {
+            var semanticModel = compilation.GetSemanticModel(interfaceDeclaration.SyntaxTree);
+            if (semanticModel.GetDeclaredSymbol(interfaceDeclaration) is not INamedTypeSymbol interfaceSymbol)
+                continue;
+
+            var namespaceName = interfaceSymbol.ContainingNamespace.ToDisplayString();
+
+            var interfaceName = interfaceSymbol.Name;
+            var className = interfaceSymbol.Name;
+
+            if (className.StartsWith("I", StringComparison.Ordinal)) {
+                className = className.Substring(1);
+            }
+
+            className = $"Null{className}";
+            var body = this.CreateBody(semanticModel, compilation, interfaceSymbol, interfaceDeclaration);
+
+            var code = $$"""
+                         using System;
+                         using System.Threading.Tasks;
+
+                         namespace {{namespaceName}};
+
+                         public sealed partial class {{className}} : {{interfaceName}}
+                         {
+                           private {{className}}()
+                           {}
+
+                           public static {{interfaceName}} Instance { get; } = new {{className}}();
+
+                         {{body}}
+                         }
+                         """;
+
+            var cleanNamespace = namespaceName.Replace(".", "");
+
+            context.AddSource($"{cleanNamespace}{className}.g.cs", SourceText.From(code, Encoding.UTF8));
+        }
     }
+
+    private string CreateBody(SemanticModel semanticModel, Compilation compilation, INamedTypeSymbol interfaceSymbol, InterfaceDeclarationSyntax interfaceDeclaration) {
+        var sb = new StringBuilder();
+
+        foreach (var member in interfaceDeclaration.Members) {
+            var ds = semanticModel.GetDeclaredSymbol(member);
+
+            if (ds is IMethodSymbol ms) {
+                var parameters = new List<string>();
+
+                foreach (var parameterSymbol in ms.Parameters) {
+                    parameters.Add($"{parameterSymbol.Type.ToDisplayString()} {parameterSymbol.Name}");
+                }
+
+                string result = string.Empty;
+
+                if (ms.ReturnsVoid) {
+                    result = "{ }";
+                }
+                else if (ms.ReturnType.IsValueType) {
+                    result = """
+                             {
+                               return default;
+                             }
+                             """;
+                }
+                else if (IsIEnumerableOfT(ms.ReturnType)) {
+                    result = """
+                             {
+                                yield break;
+                             }
+                             """;
+                }
+                else if (IsTask(ms.ReturnType)) {
+                    result = """
+                             {
+                                return Task.CompletedTask;
+                             }
+                             """;
+                } else if (IsValueTask(ms.ReturnType)) {
+                    result = """
+                             {
+                                return ValueTask.CompletedTask;
+                             }
+                             """;
+                }
+
+                if (string.IsNullOrWhiteSpace(result)) {
+                    sb.Append($"public partial {ms.ReturnType.ToDisplayString()} {ms.Name}({string.Join(", ", parameters)});").AppendLine();
+                }
+                else {
+                    sb.Append($"public {ms.ReturnType.ToDisplayString()} {ms.Name}({string.Join(", ", parameters)})").AppendLine();
+                    sb.AppendLine(result);
+                }
+
+                sb.AppendLine();
+            }
+        }
+
+        return sb.ToString();
+
+        bool IsTask(ITypeSymbol typeSymbol) {
+            var taskType = compilation.GetTypeByMetadataName("System.Threading.Tasks.Task");
+
+            return SymbolEqualityComparer.Default.Equals(typeSymbol, taskType);
+        }
+
+        bool IsValueTask(ITypeSymbol typeSymbol) {
+            var taskType = compilation.GetTypeByMetadataName("System.Threading.Tasks.ValueTask");
+
+            return SymbolEqualityComparer.Default.Equals(typeSymbol, taskType);
+        }
+
+        bool IsIEnumerableOfT(ITypeSymbol typeSymbol) {
+            if (typeSymbol is INamedTypeSymbol namedTypeSymbol) {
+                return namedTypeSymbol.ConstructedFrom.SpecialType == SpecialType.System_Collections_Generic_IEnumerable_T;
+            }
+
+            return false;
+        }
+    }
+
 
     /// <summary>
     /// Checks whether the Node is annotated with the [Report] attribute and maps syntax context to the specific node type (ClassDeclarationSyntax).
@@ -76,6 +199,4 @@ namespace {Namespace}
 
         return (classDeclarationSyntax, false);
     }
-
-
 }

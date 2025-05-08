@@ -2,12 +2,17 @@
 
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
-        <IsPackable>false</IsPackable>
+        <IsPackable>true</IsPackable>
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
+        <VersionPrefix>0.0.3</VersionPrefix>
+        <VersionSuffix>alpha</VersionSuffix>
 
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
         <IsRoslynComponent>true</IsRoslynComponent>
+        
+        <DevelopmentDependency>true</DevelopmentDependency>
+        <PackBuildOutput>false</PackBuildOutput>
 
         <RootNamespace>ShadowWriter</RootNamespace>
         <PackageId>ShadowWriter</PackageId>
@@ -22,5 +27,7 @@
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
     </ItemGroup>
 
-
+    <ItemGroup>
+        <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    </ItemGroup>
 </Project>

@@ -12,7 +12,7 @@ namespace ShadowWriter;
 /// A sample source generator that creates a custom report based on class properties. The target class should be annotated with the 'Generators.ReportAttribute' attribute.
 /// When using the source code as a baseline, an incremental source generator is preferable because it reduces the performance overhead.
 /// </summary>
-[Generator]
+// [Generator]
 public class SourceGeneratorWithAttributes : IIncrementalGenerator {
     private const string Namespace = "Generators";
     private const string AttributeName = "ReportAttribute";
