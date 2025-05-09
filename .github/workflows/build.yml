@@ -1,0 +1,34 @@
+name: Build and Publish Artifacts
+
+on:
+  push:
+    branches: [ main ]  # oder dein Branchname
+  workflow_dispatch:    # erlaubt manuelles Ausführen
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'  # oder deine Version
+
+    - name: Restore dependencies
+      run: dotnet restore ./src/ShadowWriter.sln 
+
+    - name: Build
+      run: dotnet build ./src/ShadowWriter.sln --configuration Release --no-restore
+
+    - name: Publish
+      run: dotnet pack ./src/ShadowWriter/ShadowWriter.csproj -o ./publish --no-restore
+
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: published-app
+        path: ./publish
