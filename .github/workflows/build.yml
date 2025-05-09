@@ -21,11 +21,14 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore ./src/ShadowWriter.sln 
 
+    - name: Set version variable
+      run: echo "VERSIONPREFIX=0.0.${{ github.run_number }}" >> $GITHUB_ENV
+
     - name: Build
       run: dotnet build ./src/ShadowWriter.sln --configuration Release --no-restore
 
     - name: Publish
-      run: dotnet pack ./src/ShadowWriter/ShadowWriter.csproj -o ./publish --no-restore
+      run: dotnet pack ./src/ShadowWriter/ShadowWriter.csproj -o ./publish --no-restore /p:VERSIONPREFIX=$VERSIONPREFIX
 
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
