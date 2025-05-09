@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -19,7 +20,7 @@ public sealed class NullObjectGenerator : IIncrementalGenerator {
 namespace {Namespace}
 {{
     [System.AttributeUsage(System.AttributeTargets.Interface)]
-    public sealed class {AttributeName} : System.Attribute
+    internal sealed class {AttributeName} : System.Attribute
     {{
     }}
 }}";
@@ -130,7 +131,8 @@ namespace {Namespace}
                                 return Task.CompletedTask;
                              }
                              """;
-                } else if (IsValueTask(ms.ReturnType)) {
+                }
+                else if (IsValueTask(ms.ReturnType)) {
                     result = """
                              {
                                 return ValueTask.CompletedTask;
@@ -145,13 +147,22 @@ namespace {Namespace}
                     sb.Append($"public {ms.ReturnType.ToDisplayString()} {ms.Name}({string.Join(", ", parameters)})").AppendLine();
                     sb.AppendLine(result);
                 }
-
-                sb.AppendLine();
             }
 
             if (ds is IPropertySymbol property) {
+                if (property.GetMethod is not null && property.SetMethod is null) {
+                    sb.AppendLine($"public {property.Type.ToDisplayString()} {property.Name} => default;");
+                } else if (property.SetMethod is not null && property.GetMethod is not null) {
+                    sb.AppendLine($"public {property.Type.ToDisplayString()} {property.Name}");
+                    sb.AppendLine("{");
+                    sb.AppendLine("get => default;");
+                    sb.AppendLine("set => _ = value;");
+                    sb.AppendLine("}");
+                }
 
             }
+
+            sb.AppendLine();
         }
 
         return sb.ToString();

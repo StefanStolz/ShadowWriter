@@ -2,6 +2,7 @@
   <PropertyGroup>
     <Authors>Stefan Stolz</Authors>
     <Copyright>Copyright © Stefan Stolz, 2025</Copyright>
+    <Description>Leverage the capabilities of Roslyn source generators to help generate boilerplate code efficiently.</Description>
 
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/StefanStolz/ShadowWriter.git</RepositoryUrl>
@@ -36,11 +37,11 @@
     <PackageReference Include="Shouldly" />
   </ItemGroup>
 
-<!--  <ItemGroup Condition=" '$(IsTestProject)' == 'true'">-->
-<!--    <Using Include="NUnit.Framework" />-->
-<!--    <Using Include="NSubstitute" />-->
-<!--    <Using Include="Shouldly" />-->
-<!--  </ItemGroup>-->
+  <ItemGroup Condition=" '$(IsTestProject)' == 'true'">
+    <Using Include="NUnit.Framework" />
+    <Using Include="NSubstitute" />
+    <Using Include="Shouldly" />
+  </ItemGroup>
 
   <ItemGroup Condition=" '$(Configuration)' == 'Debug' ">
     <GlobalAnalyzerConfigFiles Include="$(MSBuildThisFileDirectory).debug.globalconfig" />
