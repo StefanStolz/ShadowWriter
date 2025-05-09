@@ -5,6 +5,8 @@ namespace ShadowWriter.Sample;
 
 [NullObject]
 public interface IHaveMethods {
+    int Value { get; }
+
     void Method1(int value) {}
 
     IEnumerable<string> AnEnumerable();
@@ -22,6 +24,8 @@ public partial class NullHaveMethods {
     //
     //     yield break;
     // }
+
+    public int Value => 0;
 }
 
 public static class UseNullHaveMethods {

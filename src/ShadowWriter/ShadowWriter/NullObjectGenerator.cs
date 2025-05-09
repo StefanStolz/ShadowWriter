@@ -95,8 +95,8 @@ namespace {Namespace}
     private string CreateBody(SemanticModel semanticModel, Compilation compilation, INamedTypeSymbol interfaceSymbol, InterfaceDeclarationSyntax interfaceDeclaration) {
         var sb = new StringBuilder();
 
-        foreach (var member in interfaceDeclaration.Members) {
-            var ds = semanticModel.GetDeclaredSymbol(member);
+        foreach (var method in interfaceDeclaration.Members) {
+            var ds = semanticModel.GetDeclaredSymbol(method);
 
             if (ds is IMethodSymbol ms) {
                 var parameters = new List<string>();
@@ -147,6 +147,10 @@ namespace {Namespace}
                 }
 
                 sb.AppendLine();
+            }
+
+            if (ds is IPropertySymbol property) {
+
             }
         }
 
