@@ -27,6 +27,9 @@ jobs:
     - name: Build
       run: dotnet build ./src/ShadowWriter.sln --configuration Release
 
+    - name: Test
+      run: dotnet test ./src/ShadowWriter.sln --configuration Release
+
     - name: Publish
       run: dotnet pack ./src/ShadowWriter/ShadowWriter.csproj -o ./publish --no-restore /p:VERSIONPREFIX=$VERSIONPREFIX
 
