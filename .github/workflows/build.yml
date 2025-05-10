@@ -30,8 +30,11 @@ jobs:
     - name: Test
       run: dotnet test ./src/ShadowWriter.sln --configuration Release
 
-    - name: Publish
+    - name: Pack
       run: dotnet pack ./src/ShadowWriter/ShadowWriter.csproj -o ./publish --no-restore /p:VERSIONPREFIX=$VERSIONPREFIX
+
+    - name: Push to NuGet
+      run: dotnet nuget push ./publish/*.nupkg --api-key ${{ secrets.NUGETAPIKEY }} --source https://api.nuget.org/v3/index.json
 
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
