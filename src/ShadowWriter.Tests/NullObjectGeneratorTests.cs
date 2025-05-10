@@ -1,6 +1,8 @@
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace ShadowWriter.Tests;
 
@@ -111,23 +113,65 @@ public class NullObjectGeneratorTests {
     [TestCase(EmptyInterfaceText, ExpectedGeneratedCode, "NullEmptyInterface")]
     [TestCase(InterfaceWithMethod, ExpectedWithMethod, "NullSomeInterface")]
     [TestCase(InputWithMultipleMembers, ExpectedWithMultipleMembers, "NullSomeInterface")]
-    public void GenerateInterface(string input, string expected, string fileName) {
+    public async Task GenerateInterface(string input, string expected, string fileName) {
         var generator = new NullObjectGenerator();
 
         var driver = CSharpGeneratorDriver.Create(generator);
 
         var compilation = CSharpCompilation.Create(
             nameof(NullObjectGeneratorTests),
-            new[] { CSharpSyntaxTree.ParseText(input) },
-            new[] {
-                // To support 'System.Attribute' inheritance, add reference to 'System.Private.CoreLib'.
-                MetadataReference.CreateFromFile(typeof(object).Assembly.Location)
-            });
+            [CSharpSyntaxTree.ParseText(input)],
+            [MetadataReference.CreateFromFile(typeof(object).Assembly.Location)]
+        );
 
         var runResult = driver.RunGenerators(compilation).GetRunResult();
 
         var generated = runResult.GeneratedTrees.Single(x => x.FilePath.Contains(fileName));
-        var x = generated.GetText().ToString();
-        generated.GetText().ToString().ShouldBe(expected, StringCompareShould.IgnoreLineEndings);
+        (await generated.GetTextAsync()).ToString().ShouldBe(expected, StringCompareShould.IgnoreLineEndings);
+    }
+
+    [Test]
+    public async Task GenerateMethodWithValueTypeReturn() {
+        var input = """
+                    using System;
+                    using System.Collections.Generic;
+                    using System.Threading.Tasks;
+
+                    namespace TestNamespace;
+
+                    [ShadowWriter.NullObject]
+                    public interface ISut{
+                        int Method(int value);
+                    }
+                    """;
+
+        var generator = new NullObjectGenerator();
+
+        var driver = CSharpGeneratorDriver.Create(generator);
+
+        var compilation = CSharpCompilation.Create(
+            nameof(NullObjectGeneratorTests),
+            [CSharpSyntaxTree.ParseText(input)],
+            [MetadataReference.CreateFromFile(typeof(object).Assembly.Location)]
+        );
+
+        var runResult = driver.RunGenerators(compilation).GetRunResult();
+
+        var generated = runResult.GeneratedTrees.Single(x => x.FilePath.Contains("NullSut"));
+
+        var code = (await generated.GetTextAsync()).ToString();
+
+        var syntaxTree = CSharpSyntaxTree.ParseText(code);
+        var root = await syntaxTree.GetRootAsync();
+        var clazz = root.DescendantNodes().OfType<ClassDeclarationSyntax>().Single();
+
+        clazz.Identifier.Value.ShouldBe("NullSut");
+
+        var method = clazz.Members.OfType<MethodDeclarationSyntax>().Single();
+
+        method.Identifier.Value.ShouldBe("Method");
+        var txt = method.ReturnType.GetText().ToString().Trim();
+
+        txt.ShouldBe("int");
     }
 }
