@@ -233,12 +233,10 @@ namespace {Namespace}
 
                 // Check the full name of the [Report] attribute.
                 if (attributeName == $"{Namespace}.{AttributeName}")
-                    //return (classDeclarationSyntax, true, className);
                     return new NullObjectGeneratorArgs(true, className, classDeclarationSyntax);
             }
         }
 
-        //return (classDeclarationSyntax, false, null);
         return new NullObjectGeneratorArgs(false, null, classDeclarationSyntax);
     }
 }
