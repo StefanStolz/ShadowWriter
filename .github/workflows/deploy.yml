@@ -1,8 +1,6 @@
-name: Build and Publish Artifacts
+name: Manual deploy
 
 on:
-  push:
-    branches: [ main ]  # oder dein Branchname
   workflow_dispatch:    # erlaubt manuelles Ausführen
 
 jobs:
