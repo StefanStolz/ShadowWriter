@@ -126,6 +126,13 @@ namespace {Namespace}
                 if (ms.ReturnsVoid) {
                     result = "{ }";
                 }
+                else if (IsValueTask(ms.ReturnType)) {
+                    result = """
+                             {
+                                return ValueTask.CompletedTask;
+                             }
+                             """;
+                }
                 else if (ms.ReturnType.IsValueType) {
                     result = """
                              {
@@ -147,13 +154,7 @@ namespace {Namespace}
                              }
                              """;
                 }
-                else if (IsValueTask(ms.ReturnType)) {
-                    result = """
-                             {
-                                return ValueTask.CompletedTask;
-                             }
-                             """;
-                }
+
 
                 if (string.IsNullOrWhiteSpace(result)) {
                     sb.Append($"public partial {ms.ReturnType.ToDisplayString()} {ms.Name}({string.Join(", ", parameters)});").AppendLine();
