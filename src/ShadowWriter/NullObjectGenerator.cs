@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -22,6 +20,17 @@ namespace {Namespace}
     [System.AttributeUsage(System.AttributeTargets.Interface)]
     internal sealed class {AttributeName} : System.Attribute
     {{
+        public string Name {{ get; }}
+
+        public {AttributeName}(string name)
+        {{
+            this.Name = name;
+        }}
+
+        public {AttributeName}()
+        {{
+            this.Name = string.Empty;
+        }}
     }}
 }}";
 
@@ -35,8 +44,8 @@ namespace {Namespace}
                               .CreateSyntaxProvider(
                                   (s, _) => s is InterfaceDeclarationSyntax,
                                   (ctx, _) => GetClassDeclarationForSourceGen(ctx))
-                              .Where(t => t.reportAttributeFound)
-                              .Select((t, _) => t.Item1);
+                              .Where(t => t.ReportAttributeFound)
+                              .Select((t, _) => t);
 
         // Generate the source code.
         context.RegisterSourceOutput(
@@ -50,10 +59,11 @@ namespace {Namespace}
     /// </summary>
     /// <param name="context">Source generation context used to add source files.</param>
     /// <param name="compilation">Compilation used to provide access to the Semantic Model.</param>
-    /// <param name="interfaceDeclarations">Nodes annotated with the [NullObject] attribute that trigger the generate action.</param>
+    /// <param name="args">Nodes annotated with the [NullObject] attribute that trigger the generate action.</param>
     private void GenerateCode(SourceProductionContext context, Compilation compilation,
-        ImmutableArray<InterfaceDeclarationSyntax> interfaceDeclarations) {
-        foreach (var interfaceDeclaration in interfaceDeclarations) {
+        ImmutableArray<NullObjectGeneratorArgs> args) {
+        foreach (var arg in args) {
+            var interfaceDeclaration = arg.InterfaceDeclarationSyntax;
             var semanticModel = compilation.GetSemanticModel(interfaceDeclaration.SyntaxTree);
             if (semanticModel.GetDeclaredSymbol(interfaceDeclaration) is not INamedTypeSymbol interfaceSymbol)
                 continue;
@@ -68,6 +78,11 @@ namespace {Namespace}
             }
 
             className = $"Null{className}";
+
+            if (!string.IsNullOrWhiteSpace(arg.ClassName)) {
+                className = arg.ClassName;
+            }
+
             var body = this.CreateBody(semanticModel, compilation, interfaceSymbol, interfaceDeclaration);
 
             var code = $$"""
@@ -152,14 +167,14 @@ namespace {Namespace}
             if (ds is IPropertySymbol property) {
                 if (property.GetMethod is not null && property.SetMethod is null) {
                     sb.AppendLine($"public {property.Type.ToDisplayString()} {property.Name} => default;");
-                } else if (property.SetMethod is not null && property.GetMethod is not null) {
+                }
+                else if (property.SetMethod is not null && property.GetMethod is not null) {
                     sb.AppendLine($"public {property.Type.ToDisplayString()} {property.Name}");
                     sb.AppendLine("{");
                     sb.AppendLine("get => default;");
                     sb.AppendLine("set => _ = value;");
                     sb.AppendLine("}");
                 }
-
             }
 
             sb.AppendLine();
@@ -194,7 +209,7 @@ namespace {Namespace}
     /// </summary>
     /// <param name="context">Syntax context, based on CreateSyntaxProvider predicate</param>
     /// <returns>The specific cast and whether the attribute was found.</returns>
-    private static (InterfaceDeclarationSyntax, bool reportAttributeFound) GetClassDeclarationForSourceGen(
+    private static NullObjectGeneratorArgs GetClassDeclarationForSourceGen(
         GeneratorSyntaxContext context) {
         var classDeclarationSyntax = (InterfaceDeclarationSyntax)context.Node;
 
@@ -206,12 +221,23 @@ namespace {Namespace}
 
                 string attributeName = attributeSymbol.ContainingType.ToDisplayString();
 
+                string? className = null;
+
+                if (attributeSyntax.ArgumentList?.Arguments.Count == 1) {
+                    var x = attributeSyntax.ArgumentList.Arguments[0];
+
+                    className = x.Expression.ToString().Trim('"');
+                }
+
+
                 // Check the full name of the [Report] attribute.
                 if (attributeName == $"{Namespace}.{AttributeName}")
-                    return (classDeclarationSyntax, true);
+                    //return (classDeclarationSyntax, true, className);
+                    return new NullObjectGeneratorArgs(true, className, classDeclarationSyntax);
             }
         }
 
-        return (classDeclarationSyntax, false);
+        //return (classDeclarationSyntax, false, null);
+        return new NullObjectGeneratorArgs(false, null, classDeclarationSyntax);
     }
 }

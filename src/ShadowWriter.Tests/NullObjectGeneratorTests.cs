@@ -174,4 +174,140 @@ public class NullObjectGeneratorTests {
 
         txt.ShouldBe("int");
     }
+
+    [Test]
+    public async Task GenerateMethodWithTaskReturn() {
+        var input = """
+                    using System;
+                    using System.Collections.Generic;
+                    using System.Threading.Tasks;
+
+                    namespace TestNamespace;
+
+                    [ShadowWriter.NullObject]
+                    public interface ISut{
+                        Task Method(int value);
+                    }
+                    """;
+
+        var generator = new NullObjectGenerator();
+
+        var driver = CSharpGeneratorDriver.Create(generator);
+
+        var compilation = CSharpCompilation.Create(
+            nameof(NullObjectGeneratorTests),
+            [CSharpSyntaxTree.ParseText(input)],
+            [MetadataReference.CreateFromFile(typeof(object).Assembly.Location)]
+        );
+
+        var runResult = driver.RunGenerators(compilation).GetRunResult();
+
+        var generated = runResult.GeneratedTrees.Single(x => x.FilePath.Contains("NullSut"));
+
+        var code = (await generated.GetTextAsync()).ToString();
+
+        var syntaxTree = CSharpSyntaxTree.ParseText(code);
+        var root = await syntaxTree.GetRootAsync();
+        var clazz = root.DescendantNodes().OfType<ClassDeclarationSyntax>().Single();
+
+        clazz.Identifier.Value.ShouldBe("NullSut");
+
+        var method = clazz.Members.OfType<MethodDeclarationSyntax>().Single();
+
+        method.Identifier.Value.ShouldBe("Method");
+        var txt = method.ReturnType.GetText().ToString().Trim();
+
+        txt.ShouldBe("System.Threading.Tasks.Task");
+    }
+
+    [Test]
+    public async Task GenerateMethodWithValueTaskReturn() {
+        var input = """
+                    using System;
+                    using System.Collections.Generic;
+                    using System.Threading.Tasks;
+
+                    namespace TestNamespace;
+
+                    [ShadowWriter.NullObject]
+                    public interface ISut{
+                        ValueTask Method(int value);
+                    }
+                    """;
+
+        var generator = new NullObjectGenerator();
+
+        var driver = CSharpGeneratorDriver.Create(generator);
+
+        var compilation = CSharpCompilation.Create(
+            nameof(NullObjectGeneratorTests),
+            [CSharpSyntaxTree.ParseText(input)],
+            [MetadataReference.CreateFromFile(typeof(object).Assembly.Location)]
+        );
+
+        var runResult = driver.RunGenerators(compilation).GetRunResult();
+
+        var generated = runResult.GeneratedTrees.Single(x => x.FilePath.Contains("NullSut"));
+
+        var code = (await generated.GetTextAsync()).ToString();
+
+        var syntaxTree = CSharpSyntaxTree.ParseText(code);
+        var root = await syntaxTree.GetRootAsync();
+        var clazz = root.DescendantNodes().OfType<ClassDeclarationSyntax>().Single();
+
+        clazz.Identifier.Value.ShouldBe("NullSut");
+
+        var method = clazz.Members.OfType<MethodDeclarationSyntax>().Single();
+
+        method.Identifier.Value.ShouldBe("Method");
+        var txt = method.ReturnType.GetText().ToString().Trim();
+
+        txt.ShouldBe("System.Threading.Tasks.ValueTask");
+    }
+
+    [Test]
+    public async Task SetClassName() {
+        var input = """
+                    using System;
+                    using System.Collections.Generic;
+                    using System.Threading.Tasks;
+
+                    namespace TestNamespace;
+
+                    [ShadowWriter.NullObject(name: "abcd")]
+                    public interface ISut{
+                        ValueTask Method(int value);
+                    }
+                    """;
+
+        var generator = new NullObjectGenerator();
+
+        var driver = CSharpGeneratorDriver.Create(generator);
+
+        var compilation = CSharpCompilation.Create(
+            nameof(NullObjectGeneratorTests),
+            [CSharpSyntaxTree.ParseText(input)],
+            [MetadataReference.CreateFromFile(typeof(object).Assembly.Location)]
+        );
+
+        var runResult = driver.RunGenerators(compilation).GetRunResult();
+
+        var generated = runResult.GeneratedTrees.Single(x => x.FilePath.Contains("abcd"));
+
+        var code = (await generated.GetTextAsync()).ToString();
+
+        var syntaxTree = CSharpSyntaxTree.ParseText(code);
+        var root = await syntaxTree.GetRootAsync();
+        var clazz = root.DescendantNodes().OfType<ClassDeclarationSyntax>().Single();
+
+        clazz.Identifier.Value.ShouldBe("abcd");
+
+        var method = clazz.Members.OfType<MethodDeclarationSyntax>().Single();
+
+        method.Identifier.Value.ShouldBe("Method");
+        var txt = method.ReturnType.GetText().ToString().Trim();
+
+        txt.ShouldBe("System.Threading.Tasks.ValueTask");
+    }
+
 }

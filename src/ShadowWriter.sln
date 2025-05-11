@@ -13,6 +13,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0_Files", "0_Files", "{88F1
 	ProjectSection(SolutionItems) = preProject
 		Directory.Packages.props = Directory.Packages.props
 		Directory.Build.props = Directory.Build.props
+		.debug.globalconfig = .debug.globalconfig
+		.globalconfig = .globalconfig
+		.tests.globalconfig = .tests.globalconfig
+		..\.editorconfig = ..\.editorconfig
+		..\.gitignore = ..\.gitignore
 	EndProjectSection
 EndProject
 Global
