@@ -20,7 +20,7 @@ jobs:
       run: dotnet restore ./src/ShadowWriter.sln 
 
     - name: Set version variable
-      run: echo "VERSIONPREFIX=0.0.${{ github.run_number }}" >> $GITHUB_ENV
+      run: echo "VERSIONPREFIX=0.1.${{ github.run_number }}" >> $GITHUB_ENV
 
     - name: Build
       run: dotnet build ./src/ShadowWriter.sln --configuration Release
