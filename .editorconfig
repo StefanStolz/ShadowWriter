@@ -34,6 +34,10 @@ dotnet_naming_rule.non_public_fields_should_be_camel_case.severity = warning
 dotnet_naming_rule.non_public_fields_should_be_camel_case.symbols = non_public_field_members
 dotnet_naming_rule.non_public_fields_should_be_camel_case.style = camel_case 
 
+dotnet_naming_rule.constants.severity = warning
+dotnet_naming_rule.constants.symbols = constants
+dotnet_naming_rule.constants.style = Pascal_Case
+
 # Symbol specifications
 
 dotnet_naming_symbols.interface.applicable_kinds = interface
@@ -50,6 +54,9 @@ dotnet_naming_symbols.non_field_members.required_modifiers =
 
 dotnet_naming_symbols.non_public_field_members.applicable_kinds = field
 dotnet_naming_symbols.non_public_field_members.applicable_accessibilities = private, internal, protected, protected_internal, private_protected 
+
+dotnet_naming_symbols.constants.applicable_kinds = field
+dotnet_naming_symbols.constants.required_modifiers = const
 
 
 # Naming styles
