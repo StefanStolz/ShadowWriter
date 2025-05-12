@@ -1,6 +1,7 @@
 namespace ShadowWriter.Sample;
 
-[NullObject(name: "Shibby")]
+[NullObject]
+[ClassName("abcd")]
 public interface IDifferentName {
 
 }

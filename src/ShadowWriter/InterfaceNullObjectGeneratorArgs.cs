@@ -1,8 +1,8 @@
+using System;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace ShadowWriter;
 
-public record NullObjectGeneratorArgs(
+public record InterfaceNullObjectGeneratorArgs(
     bool ReportAttributeFound,
-    string? ClassName,
     InterfaceDeclarationSyntax InterfaceDeclarationSyntax);

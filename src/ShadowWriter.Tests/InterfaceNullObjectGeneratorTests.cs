@@ -7,7 +7,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace ShadowWriter.Tests;
 
 [TestFixture]
-public class NullObjectGeneratorTests {
+public class InterfaceNullObjectGeneratorTests {
     private const string EmptyInterfaceText =
         """
         namespace TestNamespace;
@@ -119,7 +119,7 @@ public class NullObjectGeneratorTests {
         var driver = CSharpGeneratorDriver.Create(generator);
 
         var compilation = CSharpCompilation.Create(
-            nameof(NullObjectGeneratorTests),
+            nameof(InterfaceNullObjectGeneratorTests),
             [CSharpSyntaxTree.ParseText(input)],
             [MetadataReference.CreateFromFile(typeof(object).Assembly.Location)]
         );
@@ -150,7 +150,7 @@ public class NullObjectGeneratorTests {
         var driver = CSharpGeneratorDriver.Create(generator);
 
         var compilation = CSharpCompilation.Create(
-            nameof(NullObjectGeneratorTests),
+            nameof(InterfaceNullObjectGeneratorTests),
             [CSharpSyntaxTree.ParseText(input)],
             [MetadataReference.CreateFromFile(typeof(object).Assembly.Location)]
         );
@@ -195,7 +195,7 @@ public class NullObjectGeneratorTests {
         var driver = CSharpGeneratorDriver.Create(generator);
 
         var compilation = CSharpCompilation.Create(
-            nameof(NullObjectGeneratorTests),
+            nameof(InterfaceNullObjectGeneratorTests),
             [CSharpSyntaxTree.ParseText(input)],
             [MetadataReference.CreateFromFile(typeof(object).Assembly.Location)]
         );
@@ -240,7 +240,7 @@ public class NullObjectGeneratorTests {
         var driver = CSharpGeneratorDriver.Create(generator);
 
         var compilation = CSharpCompilation.Create(
-            nameof(NullObjectGeneratorTests),
+            nameof(InterfaceNullObjectGeneratorTests),
             [CSharpSyntaxTree.ParseText(input)],
             [MetadataReference.CreateFromFile(typeof(object).Assembly.Location)]
         );
@@ -274,7 +274,8 @@ public class NullObjectGeneratorTests {
 
                     namespace TestNamespace;
 
-                    [ShadowWriter.NullObject(name: "abcd")]
+                    [ShadowWriter.NullObject]
+                    [ShadowWriter.ClassName("abcd")]
                     public interface ISut{
                         ValueTask Method(int value);
                     }
@@ -285,7 +286,7 @@ public class NullObjectGeneratorTests {
         var driver = CSharpGeneratorDriver.Create(generator);
 
         var compilation = CSharpCompilation.Create(
-            nameof(NullObjectGeneratorTests),
+            nameof(InterfaceNullObjectGeneratorTests),
             [CSharpSyntaxTree.ParseText(input)],
             [MetadataReference.CreateFromFile(typeof(object).Assembly.Location)]
         );
