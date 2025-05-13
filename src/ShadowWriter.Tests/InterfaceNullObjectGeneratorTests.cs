@@ -21,6 +21,8 @@ public class InterfaceNullObjectGeneratorTests {
         using System;
         using System.Threading.Tasks;
 
+        #nullable disable
+
         namespace TestNamespace;
 
         public sealed partial class NullEmptyInterface : IEmptyInterface
@@ -48,6 +50,8 @@ public class InterfaceNullObjectGeneratorTests {
         """
         using System;
         using System.Threading.Tasks;
+
+        #nullable disable
 
         namespace TestNamespace;
 
@@ -85,6 +89,8 @@ public class InterfaceNullObjectGeneratorTests {
         """
         using System;
         using System.Threading.Tasks;
+
+        #nullable disable
 
         namespace TestNamespace;
 

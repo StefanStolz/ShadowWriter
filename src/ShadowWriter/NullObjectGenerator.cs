@@ -80,8 +80,10 @@ namespace {Namespace}
             ClassDeclarationSyntax classDeclaration = arg.ClassDeclarationSyntax;
             SyntaxTree tree = classDeclaration.SyntaxTree;
             SyntaxNode root = tree.GetRoot();
-            SemanticModel sModel = compilation.GetSemanticModel(classDeclaration.SyntaxTree);
-            ISymbol? classSymbol = sModel.GetDeclaredSymbol(root.DescendantNodes().OfType<ClassDeclarationSyntax>().First());
+            SemanticModel semanticModel = compilation.GetSemanticModel(classDeclaration.SyntaxTree);
+            ISymbol? classSymbol = semanticModel.GetDeclaredSymbol(root.DescendantNodes().OfType<ClassDeclarationSyntax>().First());
+
+            bool makeNullableEnabled = compilation.Options.NullableContextOptions == NullableContextOptions.Enable;
 
             string namespaceName = classSymbol!.ContainingNamespace.ToDisplayString();
             string className = classSymbol.Name;
@@ -97,7 +99,7 @@ namespace {Namespace}
                                 using System;
                                 using System.Threading.Tasks;
 
-                                #nullable enable
+                                #nullable {{(makeNullableEnabled ? "enable" : "disable")}}
 
                                 namespace {{namespaceName}};
 
@@ -116,34 +118,6 @@ namespace {Namespace}
                 context.AddSource($"{cleanNamespace}{className}.g.cs", SourceText.From(code, Encoding.UTF8));
             }
         }
-    }
-
-    private string CreateBodyClassBody(ImmutableArray<INamedTypeSymbol> implementedInterfaces, Compilation compilation, ISymbol classSymbol) {
-        StringBuilder codeBuilder = new();
-
-        foreach (INamedTypeSymbol namedTypeSymbol in implementedInterfaces) {
-            foreach (ISymbol member in namedTypeSymbol.GetMembers()) {
-                if (member is IMethodSymbol ms) {
-                    string x = member.Name;
-
-                    List<string> parameters = GeneratorParameterList(ms);
-
-                    codeBuilder.AppendLine($"// {x}");
-
-                    codeBuilder.Append("public ");
-                    codeBuilder.Append(ms.ReturnType.ToDisplayString());
-                    codeBuilder.Append(" ");
-                    codeBuilder.Append(member.Name);
-                    codeBuilder.Append("(");
-                    codeBuilder.Append(string.Join(", ", parameters));
-                    codeBuilder.Append(")");
-                    codeBuilder.AppendLine();
-                    codeBuilder.AppendLine(GenerateMethodReturn(compilation, ms));
-                }
-            }
-        }
-
-        return codeBuilder.ToString();
     }
 
     /// <summary>
@@ -192,12 +166,15 @@ namespace {Namespace}
                 className = x.Expression.ToString().Trim('"');
             }
 
+            bool makeNullableEnabled = compilation.Options.NullableContextOptions == NullableContextOptions.Enable;
 
             string body = this.CreateBody(semanticModel, compilation, interfaceSymbol, interfaceDeclaration);
 
             string code = $$"""
                             using System;
                             using System.Threading.Tasks;
+
+                            #nullable {{(makeNullableEnabled ? "enable" : "disable")}}
 
                             namespace {{namespaceName}};
 
@@ -216,6 +193,34 @@ namespace {Namespace}
 
             context.AddSource($"{cleanNamespace}{className}.g.cs", SourceText.From(code, Encoding.UTF8));
         }
+    }
+
+    private string CreateBodyClassBody(ImmutableArray<INamedTypeSymbol> implementedInterfaces, Compilation compilation, ISymbol classSymbol) {
+        StringBuilder codeBuilder = new();
+
+        foreach (INamedTypeSymbol namedTypeSymbol in implementedInterfaces) {
+            foreach (ISymbol member in namedTypeSymbol.GetMembers()) {
+                if (member is IMethodSymbol ms) {
+                    string x = member.Name;
+
+                    List<string> parameters = GeneratorParameterList(ms);
+
+                    codeBuilder.AppendLine($"// {x}");
+
+                    codeBuilder.Append("public ");
+                    codeBuilder.Append(ms.ReturnType.ToDisplayString());
+                    codeBuilder.Append(" ");
+                    codeBuilder.Append(member.Name);
+                    codeBuilder.Append("(");
+                    codeBuilder.Append(string.Join(", ", parameters));
+                    codeBuilder.Append(")");
+                    codeBuilder.AppendLine();
+                    codeBuilder.AppendLine(GenerateMethodReturn(compilation, ms));
+                }
+            }
+        }
+
+        return codeBuilder.ToString();
     }
 
     private string CreateBody(SemanticModel semanticModel, Compilation compilation, INamedTypeSymbol interfaceSymbol, InterfaceDeclarationSyntax interfaceDeclaration) {
