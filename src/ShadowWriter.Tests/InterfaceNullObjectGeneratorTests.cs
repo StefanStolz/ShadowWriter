@@ -1,8 +1,10 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using StefanStolz.TestHelpers;
 
 namespace ShadowWriter.Tests;
 
@@ -115,6 +117,8 @@ public class InterfaceNullObjectGeneratorTests {
         }
         """;
 
+    private static readonly IEqualityComparer<string> codeComparer = StringComparerBuilder.Create().IgnoreLineEndings().TrimLines().Build();
+
     [Test]
     [TestCase(EmptyInterfaceText, ExpectedGeneratedCode, "NullEmptyInterface")]
     [TestCase(InterfaceWithMethod, ExpectedWithMethod, "NullSomeInterface")]
@@ -133,7 +137,9 @@ public class InterfaceNullObjectGeneratorTests {
         var runResult = driver.RunGenerators(compilation).GetRunResult();
 
         var generated = runResult.GeneratedTrees.Single(x => x.FilePath.Contains(fileName));
-        (await generated.GetTextAsync()).ToString().ShouldBe(expected, StringCompareShould.IgnoreLineEndings);
+        var text = (await generated.GetTextAsync()).ToString();
+
+        text.ShouldBe(expected, codeComparer);
     }
 
     [Test]

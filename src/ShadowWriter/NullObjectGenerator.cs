@@ -185,7 +185,7 @@ namespace {Namespace}
 
                               public static {{interfaceName}} Instance { get; } = new {{className}}();
 
-                            {{body}}
+                              {{body}}
                             }
                             """;
 
@@ -196,7 +196,7 @@ namespace {Namespace}
     }
 
     private string CreateBodyClassBody(ImmutableArray<INamedTypeSymbol> implementedInterfaces, Compilation compilation, ISymbol classSymbol) {
-        StringBuilder codeBuilder = new();
+        IndentedStringBuilder codeBuilder = new("  ", 1);
 
         foreach (INamedTypeSymbol namedTypeSymbol in implementedInterfaces) {
             foreach (ISymbol member in namedTypeSymbol.GetMembers()) {
@@ -224,7 +224,7 @@ namespace {Namespace}
     }
 
     private string CreateBody(SemanticModel semanticModel, Compilation compilation, INamedTypeSymbol interfaceSymbol, InterfaceDeclarationSyntax interfaceDeclaration) {
-        StringBuilder sb = new();
+        IndentedStringBuilder sb = new("  ", 1);
 
         foreach (MemberDeclarationSyntax method in interfaceDeclaration.Members) {
             ISymbol? ds = semanticModel.GetDeclaredSymbol(method);
