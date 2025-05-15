@@ -117,7 +117,7 @@ public class InterfaceNullObjectGeneratorTests {
         }
         """;
 
-    private static readonly IEqualityComparer<string> codeComparer = StringComparerBuilder.Create().IgnoreLineEndings().TrimLines().Build();
+    private static readonly IEqualityComparer<string> codeComparer = new StringComparerBuilder().IgnoreLineEndings().TrimLines().Build();
 
     [Test]
     [TestCase(EmptyInterfaceText, ExpectedGeneratedCode, "NullEmptyInterface")]
