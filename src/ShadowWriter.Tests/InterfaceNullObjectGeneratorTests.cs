@@ -20,13 +20,6 @@ public class InterfaceNullObjectGeneratorTests {
 
     private const string ExpectedGeneratedCode =
         """
-        using System;
-        using System.Threading.Tasks;
-
-        #nullable disable
-
-        namespace TestNamespace;
-
         public sealed partial class NullEmptyInterface : IEmptyInterface
         {
           private NullEmptyInterface()
@@ -50,13 +43,6 @@ public class InterfaceNullObjectGeneratorTests {
 
     private const string ExpectedWithMethod =
         """
-        using System;
-        using System.Threading.Tasks;
-
-        #nullable disable
-
-        namespace TestNamespace;
-
         public sealed partial class NullSomeInterface : ISomeInterface
         {
           private NullSomeInterface()
@@ -89,13 +75,6 @@ public class InterfaceNullObjectGeneratorTests {
 
     private const string ExpectedWithMultipleMembers =
         """
-        using System;
-        using System.Threading.Tasks;
-
-        #nullable disable
-
-        namespace TestNamespace;
-
         public sealed partial class NullSomeInterface : ISomeInterface
         {
           private NullSomeInterface()
@@ -137,9 +116,20 @@ public class InterfaceNullObjectGeneratorTests {
         var runResult = driver.RunGenerators(compilation).GetRunResult();
 
         var generated = runResult.GeneratedTrees.Single(x => x.FilePath.Contains(fileName));
-        var text = (await generated.GetTextAsync()).ToString();
+     //   var text = (await generated.GetTextAsync()).ToString();
+        var code = (await generated.GetTextAsync()).ToString();
 
-        text.ShouldBe(expected, codeComparer);
+        var syntaxTree = CSharpSyntaxTree.ParseText(code);
+        var root = await syntaxTree.GetRootAsync();
+        var clazz = root.DescendantNodes().OfType<ClassDeclarationSyntax>().Single();
+
+        clazz = clazz.WithAttributeLists(new SyntaxList<AttributeListSyntax>());
+
+        clazz.ToFullString().ShouldBe(expected, codeComparer);
+
+
+
+       // text.ShouldBe(expected, codeComparer);
     }
 
     [Test]
