@@ -1,0 +1,41 @@
+name: Tag Parser
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      RAW_TAG: ${{ github.ref_name }}  # z. B. "v1.2.3"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Remove 'v' and export version
+        run: |
+          VERSION=${RAW_TAG#v}
+          echo "VERSIONPREFIX=$VERSION" >> $GITHUB_ENV
+          echo "Bereinigte Version: $VERSION"
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'  # oder deine Version
+
+      - name: Restore dependencies
+        run: dotnet restore ./src/ShadowWriter.sln 
+
+      - name: Build
+        run: dotnet build ./src/ShadowWriter.sln --configuration Release
+
+      - name: Test
+        run: dotnet test ./src/ShadowWriter.sln --configuration Release
+
+      - name: Pack
+        run: dotnet pack ./src/ShadowWriter/ShadowWriter.csproj -o ./publish --no-restore /p:VERSIONPREFIX=$VERSIONPREFIX
+
+#      - name: Push to NuGet
+#        run: dotnet nuget push ./publish/*.nupkg --api-key ${{ secrets.NUGETAPIKEY }} --source https://api.nuget.org/v3/index.json
