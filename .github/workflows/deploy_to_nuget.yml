@@ -1,4 +1,4 @@
-name: Deploy to nuget
+name: Deploy to nuget via tag
 
 on:
   push:
