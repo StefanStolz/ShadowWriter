@@ -116,7 +116,6 @@ public class InterfaceNullObjectGeneratorTests {
         var runResult = driver.RunGenerators(compilation).GetRunResult();
 
         var generated = runResult.GeneratedTrees.Single(x => x.FilePath.Contains(fileName));
-     //   var text = (await generated.GetTextAsync()).ToString();
         var code = (await generated.GetTextAsync()).ToString();
 
         var syntaxTree = CSharpSyntaxTree.ParseText(code);
@@ -126,10 +125,6 @@ public class InterfaceNullObjectGeneratorTests {
         clazz = clazz.WithAttributeLists(new SyntaxList<AttributeListSyntax>());
 
         clazz.ToFullString().ShouldBe(expected, codeComparer);
-
-
-
-       // text.ShouldBe(expected, codeComparer);
     }
 
     [Test]
