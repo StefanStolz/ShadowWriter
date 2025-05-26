@@ -1,0 +1,10 @@
+<Project>
+  <ItemGroup>
+    <CompilerVisibleProperty Include="MSBuildProjectFullPath" />
+    <CompilerVisibleProperty Include="MSBuildProjectName" />
+    <CompilerVisibleProperty Include="OutDir" />
+    <CompilerVisibleProperty Include="Version" />
+    <CompilerVisibleProperty Include="RootNamespace" />
+    
+  </ItemGroup>
+</Project>

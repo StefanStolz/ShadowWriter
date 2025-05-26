@@ -4,5 +4,5 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace ShadowWriter;
 
 public record InterfaceNullObjectGeneratorArgs(
-    bool ReportAttributeFound,
+    bool NullObjectAttributeFound,
     InterfaceDeclarationSyntax InterfaceDeclarationSyntax);

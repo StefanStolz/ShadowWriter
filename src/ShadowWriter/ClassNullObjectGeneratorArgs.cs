@@ -3,5 +3,5 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 namespace ShadowWriter;
 
 public record ClassNullObjectGeneratorArgs(
-    bool ReportAttributeFound,
+    bool NullObjectAttributeFound,
     ClassDeclarationSyntax ClassDeclarationSyntax);

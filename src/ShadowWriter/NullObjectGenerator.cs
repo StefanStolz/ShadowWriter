@@ -11,7 +11,8 @@ using Microsoft.CodeAnalysis.Text;
 namespace ShadowWriter;
 
 [Generator]
-public sealed class NullObjectGenerator : IIncrementalGenerator {
+public sealed class NullObjectGenerator : IIncrementalGenerator
+{
     private const string Namespace = "ShadowWriter";
     private const string NullObjectAttributeName = "NullObjectAttribute";
     private const string ClassNameAttributeName = "ClassNameAttribute";
@@ -53,39 +54,41 @@ namespace {Namespace}
     }}
 }}";
 
-    public NullObjectGenerator() {
+    public NullObjectGenerator()
+    {
         var versionAttribute = this.GetType().Assembly.GetCustomAttribute<AssemblyFileVersionAttribute>();
-        if (versionAttribute != null) {
+        if (versionAttribute != null)
+        {
             this.version = versionAttribute.Version;
         }
     }
 
-    public void Initialize(IncrementalGeneratorInitializationContext context) {
+    public void Initialize(IncrementalGeneratorInitializationContext context)
+    {
         context.RegisterPostInitializationOutput(ctx => ctx.AddSource(
             "NullObjectAttribute.g.cs",
             SourceText.From(AttributeSourceCode, Encoding.UTF8)));
 
         IncrementalValuesProvider<InterfaceNullObjectGeneratorArgs> providerForInterfaces
             = context.SyntaxProvider
-                     .CreateSyntaxProvider(
-                         (s, _) => s is InterfaceDeclarationSyntax,
-                         (ctx, _) => GetInterfaceDeclarationForSourceGen(ctx))
-                     .Where(t => t.ReportAttributeFound)
-                     .Select((t, _) => t);
+                .CreateSyntaxProvider(
+                    (s, _) => s is InterfaceDeclarationSyntax,
+                    (ctx, _) => GetInterfaceDeclarationForSourceGen(ctx))
+                .Where(t => t.NullObjectAttributeFound)
+                .Select((t, _) => t);
 
         IncrementalValuesProvider<ClassNullObjectGeneratorArgs> providerForClasses
             = context.SyntaxProvider
-                     .CreateSyntaxProvider(
-                         (s, _) => s is ClassDeclarationSyntax,
-                         (ctx, _) => GetClassDeclarationForSourceGen(ctx))
-                     .Where(t => t.ReportAttributeFound)
-                     .Select((t, _) => t);
+                .CreateSyntaxProvider(
+                    (s, _) => s is ClassDeclarationSyntax,
+                    (ctx, _) => GetClassDeclarationForSourceGen(ctx))
+                .Where(t => t.NullObjectAttributeFound)
+                .Select((t, _) => t);
 
         // Generate the source code.
         context.RegisterSourceOutput(
             context.CompilationProvider.Combine(providerForInterfaces.Collect()),
             (ctx, t) => this.GenerateCode(ctx, t.Left, t.Right));
-
 
         context.RegisterSourceOutput(
             context.CompilationProvider.Combine(providerForClasses.Collect()),
@@ -93,20 +96,24 @@ namespace {Namespace}
     }
 
     private void GenerateCode(SourceProductionContext context, Compilation compilation,
-        ImmutableArray<ClassNullObjectGeneratorArgs> args) {
-        foreach (ClassNullObjectGeneratorArgs? arg in args) {
+        ImmutableArray<ClassNullObjectGeneratorArgs> args)
+    {
+        foreach (ClassNullObjectGeneratorArgs? arg in args)
+        {
             ClassDeclarationSyntax classDeclaration = arg.ClassDeclarationSyntax;
             SyntaxTree tree = classDeclaration.SyntaxTree;
             SyntaxNode root = tree.GetRoot();
             SemanticModel semanticModel = compilation.GetSemanticModel(classDeclaration.SyntaxTree);
-            ISymbol? classSymbol = semanticModel.GetDeclaredSymbol(root.DescendantNodes().OfType<ClassDeclarationSyntax>().First());
+            ISymbol? classSymbol =
+                semanticModel.GetDeclaredSymbol(root.DescendantNodes().OfType<ClassDeclarationSyntax>().First());
 
             bool makeNullableEnabled = compilation.Options.NullableContextOptions == NullableContextOptions.Enable;
 
             string namespaceName = classSymbol!.ContainingNamespace.ToDisplayString();
             string className = classSymbol.Name;
 
-            if (classSymbol is ITypeSymbol ts) {
+            if (classSymbol is ITypeSymbol ts)
+            {
                 ImmutableArray<INamedTypeSymbol> implementedInterfaces = ts.AllInterfaces;
 
 
@@ -151,22 +158,28 @@ namespace {Namespace}
     /// <param name="compilation">Compilation used to provide access to the Semantic Model.</param>
     /// <param name="args">Nodes annotated with the [NullObject] attribute that trigger the generate action.</param>
     private void GenerateCode(SourceProductionContext context, Compilation compilation,
-        ImmutableArray<InterfaceNullObjectGeneratorArgs> args) {
-        static AttributeSyntax? GetAttributeByName(InterfaceDeclarationSyntax interfaceDeclaration, string attributeName) {
+        ImmutableArray<InterfaceNullObjectGeneratorArgs> args)
+    {
+        static AttributeSyntax? GetAttributeByName(InterfaceDeclarationSyntax interfaceDeclaration,
+            string attributeName)
+        {
             return interfaceDeclaration.AttributeLists
-                                       .SelectMany(list => list.Attributes)
-                                       .FirstOrDefault(attr => {
-                                           string name = attr.Name.ToString();
-                                           // Optional: Handling für Attribute mit oder ohne "Attribute"-Suffix
-                                           return name == attributeName || name == attributeName + "Attribute";
-                                       });
+                .SelectMany(list => list.Attributes)
+                .FirstOrDefault(attr =>
+                {
+                    string name = attr.Name.ToString();
+                    // Optional: Handling für Attribute mit oder ohne "Attribute"-Suffix
+                    return name == attributeName || name == attributeName + "Attribute";
+                });
         }
 
 
-        foreach (InterfaceNullObjectGeneratorArgs? arg in args) {
+        foreach (InterfaceNullObjectGeneratorArgs? arg in args)
+        {
             InterfaceDeclarationSyntax interfaceDeclaration = arg.InterfaceDeclarationSyntax;
             SemanticModel semanticModel = compilation.GetSemanticModel(interfaceDeclaration.SyntaxTree);
-            if (semanticModel.GetDeclaredSymbol(interfaceDeclaration) is not INamedTypeSymbol interfaceSymbol) {
+            if (semanticModel.GetDeclaredSymbol(interfaceDeclaration) is not INamedTypeSymbol interfaceSymbol)
+            {
                 continue;
             }
 
@@ -175,14 +188,16 @@ namespace {Namespace}
             string interfaceName = interfaceSymbol.Name;
             string className = interfaceSymbol.Name;
 
-            if (className.StartsWith("I", StringComparison.Ordinal)) {
+            if (className.StartsWith("I", StringComparison.Ordinal))
+            {
                 className = className.Substring(1);
             }
 
             className = $"Null{className}";
 
             AttributeSyntax? attributeSyntax = GetAttributeByName(interfaceDeclaration, "ShadowWriter.ClassName");
-            if (attributeSyntax?.ArgumentList?.Arguments.Count == 1) {
+            if (attributeSyntax?.ArgumentList?.Arguments.Count == 1)
+            {
                 AttributeArgumentSyntax x = attributeSyntax.ArgumentList.Arguments[0];
 
                 className = x.Expression.ToString().Trim('"');
@@ -221,12 +236,16 @@ namespace {Namespace}
         }
     }
 
-    private string CreateBodyClassBody(ImmutableArray<INamedTypeSymbol> implementedInterfaces, Compilation compilation) {
+    private string CreateBodyClassBody(ImmutableArray<INamedTypeSymbol> implementedInterfaces, Compilation compilation)
+    {
         IndentedStringBuilder codeBuilder = new("  ", 1);
 
-        foreach (INamedTypeSymbol namedTypeSymbol in implementedInterfaces) {
-            foreach (ISymbol member in namedTypeSymbol.GetMembers()) {
-                if (member is IMethodSymbol ms) {
+        foreach (INamedTypeSymbol namedTypeSymbol in implementedInterfaces)
+        {
+            foreach (ISymbol member in namedTypeSymbol.GetMembers())
+            {
+                if (member is IMethodSymbol ms)
+                {
                     string x = member.Name;
 
                     List<string> parameters = GeneratorParameterList(ms);
@@ -249,32 +268,44 @@ namespace {Namespace}
         return codeBuilder.ToString();
     }
 
-    private string CreateBody(SemanticModel semanticModel, Compilation compilation, InterfaceDeclarationSyntax interfaceDeclaration) {
+    private string CreateBody(SemanticModel semanticModel, Compilation compilation,
+        InterfaceDeclarationSyntax interfaceDeclaration)
+    {
         IndentedStringBuilder sb = new("  ", 1);
 
-        foreach (MemberDeclarationSyntax method in interfaceDeclaration.Members) {
+        foreach (MemberDeclarationSyntax method in interfaceDeclaration.Members)
+        {
             ISymbol? ds = semanticModel.GetDeclaredSymbol(method);
 
-            if (ds is IMethodSymbol ms) {
+            if (ds is IMethodSymbol ms)
+            {
                 List<string> parameters = GeneratorParameterList(ms);
 
                 string result = GenerateMethodReturn(compilation, ms);
 
 
-                if (string.IsNullOrWhiteSpace(result)) {
-                    sb.Append($"public partial {ms.ReturnType.ToDisplayString()} {ms.Name}({string.Join(", ", parameters)});").AppendLine();
+                if (string.IsNullOrWhiteSpace(result))
+                {
+                    sb.Append(
+                            $"public partial {ms.ReturnType.ToDisplayString()} {ms.Name}({string.Join(", ", parameters)});")
+                        .AppendLine();
                 }
-                else {
-                    sb.Append($"public {ms.ReturnType.ToDisplayString()} {ms.Name}({string.Join(", ", parameters)})").AppendLine();
+                else
+                {
+                    sb.Append($"public {ms.ReturnType.ToDisplayString()} {ms.Name}({string.Join(", ", parameters)})")
+                        .AppendLine();
                     sb.AppendLine(result);
                 }
             }
 
-            if (ds is IPropertySymbol property) {
-                if (property.GetMethod is not null && property.SetMethod is null) {
+            if (ds is IPropertySymbol property)
+            {
+                if (property.GetMethod is not null && property.SetMethod is null)
+                {
                     sb.AppendLine($"public {property.Type.ToDisplayString()} {property.Name} => default;");
                 }
-                else if (property.SetMethod is not null && property.GetMethod is not null) {
+                else if (property.SetMethod is not null && property.GetMethod is not null)
+                {
                     sb.AppendLine($"public {property.Type.ToDisplayString()} {property.Name}");
                     sb.AppendLine("{");
                     sb.AppendLine("get => default;");
@@ -289,44 +320,52 @@ namespace {Namespace}
         return sb.ToString();
     }
 
-    private static List<string> GeneratorParameterList(IMethodSymbol ms) {
+    private static List<string> GeneratorParameterList(IMethodSymbol ms)
+    {
         List<string> parameters = new();
 
-        foreach (IParameterSymbol? parameterSymbol in ms.Parameters) {
+        foreach (IParameterSymbol? parameterSymbol in ms.Parameters)
+        {
             parameters.Add($"{parameterSymbol.Type.ToDisplayString()} {parameterSymbol.Name}");
         }
 
         return parameters;
     }
 
-    private static string GenerateMethodReturn(Compilation compilation, IMethodSymbol ms) {
+    private static string GenerateMethodReturn(Compilation compilation, IMethodSymbol ms)
+    {
         string result = string.Empty;
 
-        if (ms.ReturnsVoid) {
+        if (ms.ReturnsVoid)
+        {
             result = "{ }";
         }
-        else if (IsValueTask(ms.ReturnType)) {
+        else if (IsValueTask(ms.ReturnType))
+        {
             result = """
                      {
                         return ValueTask.CompletedTask;
                      }
                      """;
         }
-        else if (ms.ReturnType.IsValueType) {
+        else if (ms.ReturnType.IsValueType)
+        {
             result = """
                      {
                        return default;
                      }
                      """;
         }
-        else if (IsIEnumerableOfT(ms.ReturnType)) {
+        else if (IsIEnumerableOfT(ms.ReturnType))
+        {
             result = """
                      {
                         yield break;
                      }
                      """;
         }
-        else if (IsTask(ms.ReturnType)) {
+        else if (IsTask(ms.ReturnType))
+        {
             result = """
                      {
                         return Task.CompletedTask;
@@ -336,21 +375,26 @@ namespace {Namespace}
 
         return result;
 
-        bool IsValueTask(ITypeSymbol typeSymbol) {
+        bool IsValueTask(ITypeSymbol typeSymbol)
+        {
             INamedTypeSymbol? taskType = compilation.GetTypeByMetadataName("System.Threading.Tasks.ValueTask");
 
             return SymbolEqualityComparer.Default.Equals(typeSymbol, taskType);
         }
 
-        bool IsIEnumerableOfT(ITypeSymbol typeSymbol) {
-            if (typeSymbol is INamedTypeSymbol namedTypeSymbol) {
-                return namedTypeSymbol.ConstructedFrom.SpecialType == SpecialType.System_Collections_Generic_IEnumerable_T;
+        bool IsIEnumerableOfT(ITypeSymbol typeSymbol)
+        {
+            if (typeSymbol is INamedTypeSymbol namedTypeSymbol)
+            {
+                return namedTypeSymbol.ConstructedFrom.SpecialType ==
+                       SpecialType.System_Collections_Generic_IEnumerable_T;
             }
 
             return false;
         }
 
-        bool IsTask(ITypeSymbol typeSymbol) {
+        bool IsTask(ITypeSymbol typeSymbol)
+        {
             INamedTypeSymbol? taskType = compilation.GetTypeByMetadataName("System.Threading.Tasks.Task");
 
             return SymbolEqualityComparer.Default.Equals(typeSymbol, taskType);
@@ -365,20 +409,25 @@ namespace {Namespace}
     /// <param name="context">Syntax context, based on CreateSyntaxProvider predicate</param>
     /// <returns>The specific cast and whether the attribute was found.</returns>
     private static InterfaceNullObjectGeneratorArgs GetInterfaceDeclarationForSourceGen(
-        GeneratorSyntaxContext context) {
+        GeneratorSyntaxContext context)
+    {
         InterfaceDeclarationSyntax classDeclarationSyntax = (InterfaceDeclarationSyntax)context.Node;
 
         // Go through all attributes of the class.
-        foreach (AttributeListSyntax attributeListSyntax in classDeclarationSyntax.AttributeLists) {
-            foreach (AttributeSyntax attributeSyntax in attributeListSyntax.Attributes) {
-                if (context.SemanticModel.GetSymbolInfo(attributeSyntax).Symbol is not IMethodSymbol attributeSymbol) {
+        foreach (AttributeListSyntax attributeListSyntax in classDeclarationSyntax.AttributeLists)
+        {
+            foreach (AttributeSyntax attributeSyntax in attributeListSyntax.Attributes)
+            {
+                if (context.SemanticModel.GetSymbolInfo(attributeSyntax).Symbol is not IMethodSymbol attributeSymbol)
+                {
                     continue; // if we can't get the symbol, ignore it
                 }
 
                 string attributeName = attributeSymbol.ContainingType.ToDisplayString();
 
                 // Check the full name of the [Report] attribute.
-                if (attributeName == $"{Namespace}.{NullObjectAttributeName}") {
+                if (attributeName == $"{Namespace}.{NullObjectAttributeName}")
+                {
                     return new InterfaceNullObjectGeneratorArgs(true, classDeclarationSyntax);
                 }
             }
@@ -395,20 +444,25 @@ namespace {Namespace}
     /// <param name="context">Syntax context, based on CreateSyntaxProvider predicate</param>
     /// <returns>The specific cast and whether the attribute was found.</returns>
     private static ClassNullObjectGeneratorArgs GetClassDeclarationForSourceGen(
-        GeneratorSyntaxContext context) {
+        GeneratorSyntaxContext context)
+    {
         ClassDeclarationSyntax classDeclarationSyntax = (ClassDeclarationSyntax)context.Node;
 
         // Go through all attributes of the class.
-        foreach (AttributeListSyntax attributeListSyntax in classDeclarationSyntax.AttributeLists) {
-            foreach (AttributeSyntax attributeSyntax in attributeListSyntax.Attributes) {
-                if (context.SemanticModel.GetSymbolInfo(attributeSyntax).Symbol is not IMethodSymbol attributeSymbol) {
+        foreach (AttributeListSyntax attributeListSyntax in classDeclarationSyntax.AttributeLists)
+        {
+            foreach (AttributeSyntax attributeSyntax in attributeListSyntax.Attributes)
+            {
+                if (context.SemanticModel.GetSymbolInfo(attributeSyntax).Symbol is not IMethodSymbol attributeSymbol)
+                {
                     continue; // if we can't get the symbol, ignore it
                 }
 
                 string attributeName = attributeSymbol.ContainingType.ToDisplayString();
 
                 // Check the full name of the [Report] attribute.
-                if (attributeName == $"{Namespace}.{NullObjectAttributeName}") {
+                if (attributeName == $"{Namespace}.{NullObjectAttributeName}")
+                {
                     return new ClassNullObjectGeneratorArgs(true, classDeclarationSyntax);
                 }
             }

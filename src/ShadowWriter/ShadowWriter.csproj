@@ -5,7 +5,7 @@
         <IsPackable>true</IsPackable>
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
-        <VersionPrefix>0.0.4</VersionPrefix>
+        <VersionPrefix>0.0.7</VersionPrefix>
         <VersionSuffix>alpha</VersionSuffix>
 
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
@@ -31,5 +31,6 @@
     <ItemGroup>
         <None Include="README.md" Pack="true" PackagePath="\"/>
         <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+        <None Update="ShadowWriter.props" Pack="true" PackagePath="build" />
     </ItemGroup>
 </Project>
