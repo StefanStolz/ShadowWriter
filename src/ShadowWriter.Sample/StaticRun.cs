@@ -12,5 +12,17 @@ public static class StaticRun
         Console.WriteLine($"Version: {TheProject.Version}");
         Console.WriteLine($"RootNamespace: {TheProject.RootNamespace}");
 
+        Console.WriteLine("*******************");
+        Console.WriteLine($"Files-Debug: {EmbeddedResources.DebugInfo}");
+
+
+        Console.WriteLine(EmbeddedResources.Image1Jpg.ResourceName);
+
+        var names = typeof(EmbeddedResources).Assembly.GetManifestResourceNames();
+
+        foreach (string name in names)
+        {
+            Console.WriteLine($"  {name}");
+        }
     }
 }

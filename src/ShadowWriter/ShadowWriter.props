@@ -4,7 +4,11 @@
     <CompilerVisibleProperty Include="MSBuildProjectName" />
     <CompilerVisibleProperty Include="OutDir" />
     <CompilerVisibleProperty Include="Version" />
+    <CompilerVisibleProperty Include="VersionPrefix" />
+    <CompilerVisibleProperty Include="VersionSuffix" />
     <CompilerVisibleProperty Include="RootNamespace" />
-    
+   
+   
+    <CompilerVisibleProperty Include="AllEmbeddedResources" />
   </ItemGroup>
 </Project>

@@ -12,4 +12,24 @@
         <ProjectReference Include="..\ShadowWriter\ShadowWriter.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
     </ItemGroup>
 
+    
+    <ItemGroup>
+      <None Remove="res\Awesome.jpg" />
+      <None Remove="res\Clint.jpg" />
+    </ItemGroup>
+
+    
+    <ItemGroup>
+      <Folder Include="res\" />
+    </ItemGroup>
+
+    
+    <ItemGroup>
+      <None Remove="res\image1.jpg" />
+      <EmbeddedResource Include="res\image1.jpg" />
+      <None Remove="res\image2.jpg" />
+      <EmbeddedResource Include="res\image2.jpg" />
+    </ItemGroup>
+
+    <Import Project="../ShadowWriter/ShadowWriter.targets" />
 </Project>

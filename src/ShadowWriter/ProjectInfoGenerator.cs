@@ -1,4 +1,3 @@
-using System;
 using System.Reflection;
 using System.Text;
 using Microsoft.CodeAnalysis;
@@ -9,7 +8,7 @@ namespace ShadowWriter;
 [Generator]
 public sealed class ProjectInfoGenerator : IIncrementalGenerator
 {
-    private readonly string version = "0.0.0";
+    private readonly string generatorAssemblyVersion = "0.0.0";
     private const string Namespace = "ShadowWriter";
 
     public ProjectInfoGenerator()
@@ -17,7 +16,7 @@ public sealed class ProjectInfoGenerator : IIncrementalGenerator
         var versionAttribute = this.GetType().Assembly.GetCustomAttribute<AssemblyFileVersionAttribute>();
         if (versionAttribute != null)
         {
-            this.version = versionAttribute.Version;
+            this.generatorAssemblyVersion = versionAttribute.Version;
         }
     }
 
@@ -32,8 +31,12 @@ public sealed class ProjectInfoGenerator : IIncrementalGenerator
                 x.GlobalOptions.TryGetValue("build_property.Version", out var version);
                 x.GlobalOptions.TryGetValue("build_property.RootNamespace", out var rootNamespace);
 
-
-                return new ProjectInfo(fullPath ?? "", name ?? "", outdir ?? "", version ?? "", rootNamespace ?? "");
+                return new ProjectInfo(
+                    fullPath ?? "",
+                    name ?? "",
+                    outdir ?? "",
+                    version ?? "",
+                    rootNamespace ?? "");
             });
 
         context.RegisterSourceOutput(properties, this.GenerateCode);
@@ -50,7 +53,7 @@ public sealed class ProjectInfoGenerator : IIncrementalGenerator
               namespace {{Namespace}};
 
               [CompilerGenerated]
-              [GeneratedCode("ShadowWriter", "{{version}}")]
+              [GeneratedCode("ShadowWriter", "{{this.generatorAssemblyVersion}}")]
               internal static class TheProject
               {
                 public static string FullPath => @"{{projectInfo.FullPath}}";
