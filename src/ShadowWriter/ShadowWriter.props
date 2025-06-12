@@ -7,7 +7,7 @@
     <CompilerVisibleProperty Include="VersionPrefix" />
     <CompilerVisibleProperty Include="VersionSuffix" />
     <CompilerVisibleProperty Include="RootNamespace" />
-   
+    <CompilerVisibleProperty Include="GenerateEmbeddedResources" />
    
     <CompilerVisibleProperty Include="AllEmbeddedResources" />
   </ItemGroup>

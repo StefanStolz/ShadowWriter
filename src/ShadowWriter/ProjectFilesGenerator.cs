@@ -8,7 +8,7 @@ using Microsoft.CodeAnalysis.Text;
 
 namespace ShadowWriter;
 
-public sealed record EncodedFileInfos(string RootNamespace, string AllEmbeddedResources);
+public sealed record EncodedFileInfos(bool Generate, string RootNamespace, string AllEmbeddedResources);
 
 [Generator]
 public sealed class ProjectFilesGenerator : IIncrementalGenerator
@@ -30,10 +30,14 @@ public sealed class ProjectFilesGenerator : IIncrementalGenerator
         var properties = context.AnalyzerConfigOptionsProvider
             .Select((x, _) =>
             {
+                x.GlobalOptions.TryGetValue("build_property.GenerateEmbeddedResources",
+                    out var generateEmbeddedResourcesText);
                 x.GlobalOptions.TryGetValue("build_property.RootNamespace", out var rootNamespace);
                 x.GlobalOptions.TryGetValue("build_property.AllEmbeddedResources", out var allEmbeddedResources);
 
-                return new EncodedFileInfos(rootNamespace ?? "", allEmbeddedResources ?? "");
+                bool.TryParse(generateEmbeddedResourcesText, out bool generateEmbeddedResources);
+
+                return new EncodedFileInfos(generateEmbeddedResources, rootNamespace ?? "", allEmbeddedResources ?? "");
             });
 
         context.RegisterSourceOutput(properties, this.GenerateCode);
@@ -41,6 +45,8 @@ public sealed class ProjectFilesGenerator : IIncrementalGenerator
 
     private void GenerateCode(SourceProductionContext context, EncodedFileInfos encodedFileInfos)
     {
+        if (!encodedFileInfos.Generate) return;
+
         var body = CreateBody(encodedFileInfos);
 
         var code =
@@ -68,11 +74,13 @@ public sealed class ProjectFilesGenerator : IIncrementalGenerator
                       this.resourceName = resourceName.Replace(Path.DirectorySeparatorChar, '.').Replace(Path.AltDirectorySeparatorChar, '.');
                   }
 
-                  public string ResourceName => resourceName;
+                  public string ResourceName => this.resourceName;
+
+                  public string ManifestResourceName => $"{this.rootNamespace}.{this.resourceName}";
 
                   public Stream GetEmbeddedResourceStream()
                   {
-                      return assembly.GetManifestResourceStream($"{this.rootNamespace}.{this.resourceName}") ?? throw new FileNotFoundException($"Embedded resource {this.resourceName} not found.");
+                      return assembly.GetManifestResourceStream(this.ManifestResourceName) ?? throw new FileNotFoundException($"Embedded resource {this.resourceName} not found.");
                   }
               }
 

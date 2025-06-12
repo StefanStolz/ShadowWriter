@@ -41,6 +41,7 @@ public sealed class ProjectInfoGenerator : IIncrementalGenerator
             });
 
         context.RegisterSourceOutput(properties, this.GenerateCode);
+
     }
 
     private void GenerateCode(SourceProductionContext context, ProjectInfo projectInfo)
@@ -60,7 +61,7 @@ public sealed class ProjectInfoGenerator : IIncrementalGenerator
                 public static string FullPath => @"{{projectInfo.FullPath}}";
                 public static string ProjectDirectory => @"{{Path.GetDirectoryName(projectInfo.FullPath)}}";
                 public static string Name => @"{{projectInfo.Name}}";
-                public static string OutDir => @"{{projectInfo.OutDir}}";
+                public static string OutDir => @"{{Path.GetFullPath(projectInfo.OutDir)}}";
                 public static string Version => @"{{projectInfo.Version}}";
                 public static string RootNamespace => @"{{projectInfo.RootNamespace}}";
               }
