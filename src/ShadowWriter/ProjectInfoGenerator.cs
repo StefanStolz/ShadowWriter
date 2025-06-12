@@ -1,3 +1,4 @@
+using System.IO;
 using System.Reflection;
 using System.Text;
 using Microsoft.CodeAnalysis;
@@ -57,6 +58,7 @@ public sealed class ProjectInfoGenerator : IIncrementalGenerator
               internal static class TheProject
               {
                 public static string FullPath => @"{{projectInfo.FullPath}}";
+                public static string ProjectDirectory => @"{{Path.GetDirectoryName(projectInfo.FullPath)}}";
                 public static string Name => @"{{projectInfo.Name}}";
                 public static string OutDir => @"{{projectInfo.OutDir}}";
                 public static string Version => @"{{projectInfo.Version}}";

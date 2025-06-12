@@ -1,8 +1,3 @@
 <Project>
-    <Target Name="BuildResourceList" BeforeTargets="BeforeBuild">
-        <PropertyGroup>
-            <AllEmbeddedResources>@(EmbeddedResource, '|')</AllEmbeddedResources>
-        </PropertyGroup>
-        <Message Text="All embedded resources: $(AllEmbeddedResources)" Importance="High" />
-    </Target>
+
 </Project>
