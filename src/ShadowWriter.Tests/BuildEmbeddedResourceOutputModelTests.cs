@@ -31,7 +31,7 @@ public class BuildEmbeddedResourceOutputModelTests
         var item  =result.InnerClasses[0].Items[0];
 
         item.PropertyName.ShouldBe("Image1Jpg");
-        item.ManifestResourceName.ShouldBe("a.res.Image1.jpg");
+        item.ManifestResourceName.ShouldBe("a.Res.Image1.jpg");
     }
 
     [Test]

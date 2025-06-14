@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
@@ -116,6 +115,8 @@ public sealed class ProjectFilesGenerator : IIncrementalGenerator
                 $"public static EmbeddedResourceInfo {embeddedResourceItem.PropertyName} = new(typeof(EmbeddedResourceInfo).Assembly,\"{embeddedResourceItem.ManifestResourceName}\");");
         }
 
+        return builder.ToString();
+
         void WriteEmbeddedClassInfo(IEnumerable<EmbeddedResourceClassInfo> infos)
         {
             using var _ = builder.BeginBlock();
@@ -139,19 +140,6 @@ public sealed class ProjectFilesGenerator : IIncrementalGenerator
                 builder.AppendLine("}");
             }
         }
-
-
-        // foreach (var file in files)
-        // {
-        //     var name = Path.GetFileName(file);
-        //     var nameParts = name.Split(['.'], StringSplitOptions.RemoveEmptyEntries).Select(x => x.ToPascalCase());
-        //     var propertyName = string.Concat(nameParts);
-        //
-        //     builder.AppendLine(
-        //         $"public static EmbeddedResourceInfo {propertyName} = new(typeof(EmbeddedResourceInfo).Assembly,\"{encodedFileInfos.RootNamespace}\", \"{file}\");");
-        // }
-
-        return builder.ToString();
     }
 }
 
@@ -177,7 +165,7 @@ internal sealed class BuildEmbeddedResourceOutputModel
             var parts = new Queue<string>(dir.Split([Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar],
                 StringSplitOptions.RemoveEmptyEntries));
 
-            var nsx = string.Concat(parts.Select(p => $"{p}."));
+            var nsx = string.Concat(parts.Select(p => $"{p.ToPascalCase()}."));
 
             EmbeddedResourceClassInfo.Builder? classInfo = result;
             while (parts.Count > 0)
