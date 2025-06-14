@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
@@ -64,23 +66,18 @@ public sealed class ProjectFilesGenerator : IIncrementalGenerator
               internal sealed class EmbeddedResourceInfo
               {
                   private readonly Assembly assembly;
-                  private readonly string rootNamespace;
-                  private readonly string resourceName;
 
-                  public EmbeddedResourceInfo(Assembly assembly, string rootNamespace, string resourceName)
+                  public EmbeddedResourceInfo(Assembly assembly, string manifestResourceName)
                   {
                       this.assembly = assembly;
-                      this.rootNamespace = rootNamespace;
-                      this.resourceName = resourceName.Replace(Path.DirectorySeparatorChar, '.').Replace(Path.AltDirectorySeparatorChar, '.');
+                      this.ManifestResourceName = manifestResourceName;
                   }
 
-                  public string ResourceName => this.resourceName;
-
-                  public string ManifestResourceName => $"{this.rootNamespace}.{this.resourceName}";
+                  public string ManifestResourceName { get; }
 
                   public Stream GetEmbeddedResourceStream()
                   {
-                      return assembly.GetManifestResourceStream(this.ManifestResourceName) ?? throw new FileNotFoundException($"Embedded resource {this.resourceName} not found.");
+                      return assembly.GetManifestResourceStream(this.ManifestResourceName) ?? throw new FileNotFoundException($"Embedded resource {this.ManifestResourceName} not found.");
                   }
               }
 
@@ -104,30 +101,155 @@ public sealed class ProjectFilesGenerator : IIncrementalGenerator
     {
         var files = encodedFileInfos.AllEmbeddedResources.Split(['|'], StringSplitOptions.RemoveEmptyEntries);
 
-
         var builder = new IndentedStringBuilder("  ", 1);
+        var buildOutputModel = new BuildEmbeddedResourceOutputModel(encodedFileInfos.RootNamespace);
 
-        foreach (var file in files)
+        var outputModel = buildOutputModel.GeneratedClasses(files);
+
+        WriteEmbeddedClassInfo(outputModel.InnerClasses);
+
+        foreach (var embeddedResourceItem in outputModel.Items)
         {
-            var name = Path.GetFileName(file);
-            var nameParts = name.Split(['.'], StringSplitOptions.RemoveEmptyEntries).Select(this.PascalCase);
-            var propertyName = string.Concat(nameParts);
-
-
             builder.AppendLine(
-                $"public static EmbeddedResourceInfo {propertyName} = new(typeof(EmbeddedResourceInfo).Assembly,\"{encodedFileInfos.RootNamespace}\", \"{file}\");");
+                $"// {embeddedResourceItem.ManifestResourceName} - {embeddedResourceItem.PropertyName}");
+            builder.AppendLine(
+                $"public static EmbeddedResourceInfo {embeddedResourceItem.PropertyName} = new(typeof(EmbeddedResourceInfo).Assembly,\"{embeddedResourceItem.ManifestResourceName}\");");
         }
+
+        void WriteEmbeddedClassInfo(IEnumerable<EmbeddedResourceClassInfo> infos)
+        {
+            using var _ = builder.BeginBlock();
+            foreach (var embeddedResourceClassInfo in infos)
+            {
+                builder.AppendLine($"public static class {embeddedResourceClassInfo.Name} {{");
+                if (embeddedResourceClassInfo.InnerClasses.Count > 0)
+                {
+                    WriteEmbeddedClassInfo(embeddedResourceClassInfo.InnerClasses);
+                }
+
+                foreach (var embeddedResourceItem in embeddedResourceClassInfo.Items)
+                {
+                    builder.AppendLine(
+                        $"// {embeddedResourceItem.ManifestResourceName} - {embeddedResourceItem.PropertyName}");
+
+                    builder.AppendLine(
+                        $"public static EmbeddedResourceInfo {embeddedResourceItem.PropertyName} = new(typeof(EmbeddedResourceInfo).Assembly,\"{embeddedResourceItem.ManifestResourceName}\");");
+                }
+
+                builder.AppendLine("}");
+            }
+        }
+
+
+        // foreach (var file in files)
+        // {
+        //     var name = Path.GetFileName(file);
+        //     var nameParts = name.Split(['.'], StringSplitOptions.RemoveEmptyEntries).Select(x => x.ToPascalCase());
+        //     var propertyName = string.Concat(nameParts);
+        //
+        //     builder.AppendLine(
+        //         $"public static EmbeddedResourceInfo {propertyName} = new(typeof(EmbeddedResourceInfo).Assembly,\"{encodedFileInfos.RootNamespace}\", \"{file}\");");
+        // }
 
         return builder.ToString();
     }
+}
 
-    private string PascalCase(string name)
+internal sealed class BuildEmbeddedResourceOutputModel
+{
+    private readonly string rootNamespace;
+
+    public BuildEmbeddedResourceOutputModel(string rootNamespace)
     {
-        if (string.IsNullOrEmpty(name)) return "";
-        if (name.Length == 1) return name;
-        var buffer = name.ToLowerInvariant();
-        var firstChar = char.ToUpperInvariant(buffer[0]);
+        this.rootNamespace = rootNamespace;
+    }
 
-        return string.Concat(new[] { firstChar }.Concat(name.ToLowerInvariant().Skip(1)));
+    public EmbeddedResourceClassInfo GeneratedClasses(IEnumerable<string> files)
+    {
+        var result = new EmbeddedResourceClassInfo.Builder();
+        result.Name = "EmbeddedResources";
+
+        foreach (var file in files)
+        {
+            IList<EmbeddedResourceClassInfo.Builder> current = result.InnerClasses;
+            var dir = Path.GetDirectoryName(file) ?? "";
+
+            var parts = new Queue<string>(dir.Split([Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar],
+                StringSplitOptions.RemoveEmptyEntries));
+
+            var nsx = string.Concat(parts.Select(p => $"{p}."));
+
+            EmbeddedResourceClassInfo.Builder? classInfo = result;
+            while (parts.Count > 0)
+            {
+                var part = parts.Dequeue();
+
+                classInfo = current.FirstOrDefault(x => x.Name.Equals(part, StringComparison.Ordinal));
+                if (classInfo is null)
+                {
+                    classInfo = new EmbeddedResourceClassInfo.Builder();
+                    classInfo.Name = part;
+                    current.Add(classInfo);
+                }
+
+                current = classInfo.InnerClasses;
+            }
+
+            var name = Path.GetFileName(file) ?? "";
+
+            var propertyName =
+                $"{Path.GetFileNameWithoutExtension(file).ToPascalCase()}{Path.GetExtension(file).TrimStart('.').ToPascalCase()}"
+                    .ToValidPropertyName();
+
+            classInfo.Items.Add(new EmbeddedResourceItem.Builder
+            {
+                ManifestResourceName = $"{this.rootNamespace}.{nsx}{name}",
+                PropertyName = propertyName,
+            });
+        }
+
+        return result.Build();
     }
 }
+
+internal sealed record EmbeddedResourceItem(string PropertyName, string ManifestResourceName)
+{
+    public sealed class Builder
+    {
+        public string PropertyName { get; set; } = "";
+        public string ManifestResourceName { get; set; } = "";
+
+        public EmbeddedResourceItem Build()
+        {
+            if (string.IsNullOrWhiteSpace(this.PropertyName)) throw new InvalidOperationException();
+            if (string.IsNullOrWhiteSpace(this.ManifestResourceName)) throw new InvalidOperationException();
+
+            return new EmbeddedResourceItem(PropertyName, ManifestResourceName);
+        }
+    }
+}
+
+internal sealed record EmbeddedResourceClassInfo(
+    string Name,
+    IReadOnlyList<EmbeddedResourceClassInfo> InnerClasses,
+    IReadOnlyList<EmbeddedResourceItem> Items)
+{
+    public sealed class Builder
+    {
+        public string Name { get; set; } = "";
+
+        public List<Builder> InnerClasses { get; } = new();
+
+        public List<EmbeddedResourceItem.Builder> Items { get; } = new();
+
+        public EmbeddedResourceClassInfo Build()
+        {
+            if (string.IsNullOrWhiteSpace(this.Name)) throw new InvalidOperationException();
+
+            return new EmbeddedResourceClassInfo(
+                this.Name,
+                this.InnerClasses.ConvertAll(i => i.Build()).AsReadOnly(),
+                this.Items.ConvertAll(i => i.Build()).AsReadOnly());
+        }
+    }
+};

@@ -15,8 +15,8 @@ public static class StaticRun
         Console.WriteLine("*******************");
         Console.WriteLine($"Files-Debug: {EmbeddedResources.DebugInfo}");
 
-        Console.WriteLine(EmbeddedResources.Image1Jpg.ResourceName);
-        Console.WriteLine(EmbeddedResources.Image2Jpg.ResourceName);
+        // Console.WriteLine(EmbeddedResources.Image1Jpg.ResourceName);
+        // Console.WriteLine(EmbeddedResources.Image2Jpg.ResourceName);
 
         var names = typeof(EmbeddedResources).Assembly.GetManifestResourceNames();
 

@@ -32,16 +32,29 @@ public sealed class ProjectInfoGenerator : IIncrementalGenerator
                 x.GlobalOptions.TryGetValue("build_property.Version", out var version);
                 x.GlobalOptions.TryGetValue("build_property.RootNamespace", out var rootNamespace);
 
+
                 return new ProjectInfo(
                     fullPath ?? "",
                     name ?? "",
                     outdir ?? "",
                     version ?? "",
-                    rootNamespace ?? "");
+                    rootNamespace ?? "" );
             });
 
-        context.RegisterSourceOutput(properties, this.GenerateCode);
+        // context.RegisterSourceOutput(context.AnalyzerConfigOptionsProvider,
+        //     (spc, provider) =>
+        //     {
+        //         var builder = new StringBuilder();
+        //         builder.AppendLine("// Verfügbare GlobalOptions:");
+        //         foreach (var kvp in provider.GlobalOptions.Keys)
+        //         {
+        //             builder.AppendLine($"// {kvp}");
+        //         }
+        //
+        //         spc.AddSource("BuildPropertiesDebug.g.cs", SourceText.From(builder.ToString(), Encoding.UTF8));
+        //     });
 
+        context.RegisterSourceOutput(properties, this.GenerateCode);
     }
 
     private void GenerateCode(SourceProductionContext context, ProjectInfo projectInfo)
