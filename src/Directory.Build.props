@@ -33,7 +33,8 @@
     </PackageReference>
     <PackageReference Include="NUnit3TestAdapter" />
     <PackageReference Include="NSubstitute" />
-    <PackageReference Include="StefanStolz.TestHelpers" />
+<!--    <PackageReference Include="StefanStolz.TestHelpers" />-->
+    <PackageReference Include="ShadowKit" />
     <PackageReference Include="Shouldly" />
   </ItemGroup>
 

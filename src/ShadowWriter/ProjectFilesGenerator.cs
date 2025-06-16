@@ -41,14 +41,32 @@ public sealed class ProjectFilesGenerator : IIncrementalGenerator
                 return new EncodedFileInfos(generateEmbeddedResources, rootNamespace ?? "", allEmbeddedResources ?? "");
             });
 
-        context.RegisterSourceOutput(properties, this.GenerateCode);
+        context.RegisterSourceOutput(properties.Combine(context.CompilationProvider), this.GenerateCode);
     }
 
-    private void GenerateCode(SourceProductionContext context, EncodedFileInfos encodedFileInfos)
+
+
+    private void GenerateCode(SourceProductionContext context, (EncodedFileInfos FileInfos, Compilation Compilation) arg)
     {
+        var encodedFileInfos = arg.FileInfos;
+        var compilation = arg.Compilation;
+
         if (!encodedFileInfos.Generate) return;
 
         var body = CreateBody(encodedFileInfos);
+
+        var hasRef = compilation.ReferencedAssemblyNames.Any(ra => ra.Name.StartsWith("ShadowKit.IO", StringComparison.Ordinal));
+
+        string usings = "";
+        string implements = "";
+        string ioCode = "";
+
+        if (hasRef)
+        {
+            usings = "using ShadowKit.IO;";
+            implements = ": ITransientFileManagerSource";
+            ioCode = "Stream ITransientFileManagerSource.GetDataStream() => this.GetEmbeddedResourceStream();";
+        }
 
         var code =
             $$"""
@@ -57,27 +75,33 @@ public sealed class ProjectFilesGenerator : IIncrementalGenerator
               using System.Runtime.CompilerServices;
               using System.IO;
               using System.Reflection;
+              {{usings}}
 
               namespace {{Namespace}};
 
               [CompilerGenerated]
               [GeneratedCode("ShadowWriter", "{{this.generatorAssemblyVersion}}")]
-              internal sealed class EmbeddedResourceInfo
+              internal sealed class EmbeddedResourceInfo {{implements}}
               {
                   private readonly Assembly assembly;
 
-                  public EmbeddedResourceInfo(Assembly assembly, string manifestResourceName)
+                  public EmbeddedResourceInfo(Assembly assembly, string manifestResourceName, string fileName)
                   {
                       this.assembly = assembly;
                       this.ManifestResourceName = manifestResourceName;
+                      this.FileName = fileName;
                   }
 
                   public string ManifestResourceName { get; }
+
+                  public string FileName { get; }
 
                   public Stream GetEmbeddedResourceStream()
                   {
                       return assembly.GetManifestResourceStream(this.ManifestResourceName) ?? throw new FileNotFoundException($"Embedded resource {this.ManifestResourceName} not found.");
                   }
+
+                  {{ioCode}}
               }
 
               [CompilerGenerated]
@@ -112,7 +136,7 @@ public sealed class ProjectFilesGenerator : IIncrementalGenerator
             builder.AppendLine(
                 $"// {embeddedResourceItem.ManifestResourceName} - {embeddedResourceItem.PropertyName}");
             builder.AppendLine(
-                $"public static EmbeddedResourceInfo {embeddedResourceItem.PropertyName} = new(typeof(EmbeddedResourceInfo).Assembly,\"{embeddedResourceItem.ManifestResourceName}\");");
+                $"public static EmbeddedResourceInfo {embeddedResourceItem.PropertyName} = new(typeof(EmbeddedResourceInfo).Assembly,\"{embeddedResourceItem.ManifestResourceName}\", \"{embeddedResourceItem.FileName}\");");
         }
 
         return builder.ToString();
@@ -134,7 +158,7 @@ public sealed class ProjectFilesGenerator : IIncrementalGenerator
                         $"// {embeddedResourceItem.ManifestResourceName} - {embeddedResourceItem.PropertyName}");
 
                     builder.AppendLine(
-                        $"public static EmbeddedResourceInfo {embeddedResourceItem.PropertyName} = new(typeof(EmbeddedResourceInfo).Assembly,\"{embeddedResourceItem.ManifestResourceName}\");");
+                        $"public static EmbeddedResourceInfo {embeddedResourceItem.PropertyName} = new(typeof(EmbeddedResourceInfo).Assembly,\"{embeddedResourceItem.ManifestResourceName}\", \"{embeddedResourceItem.FileName}\");");
                 }
 
                 builder.AppendLine("}");
@@ -191,6 +215,7 @@ internal sealed class BuildEmbeddedResourceOutputModel
 
             classInfo.Items.Add(new EmbeddedResourceItem.Builder
             {
+                FileName = file,
                 ManifestResourceName = $"{this.rootNamespace}.{nsx}{name}",
                 PropertyName = propertyName,
             });
@@ -200,19 +225,21 @@ internal sealed class BuildEmbeddedResourceOutputModel
     }
 }
 
-internal sealed record EmbeddedResourceItem(string PropertyName, string ManifestResourceName)
+internal sealed record EmbeddedResourceItem(string PropertyName, string ManifestResourceName, string FileName)
 {
     public sealed class Builder
     {
         public string PropertyName { get; set; } = "";
         public string ManifestResourceName { get; set; } = "";
+        public string FileName { get; set; } = "";
 
         public EmbeddedResourceItem Build()
         {
             if (string.IsNullOrWhiteSpace(this.PropertyName)) throw new InvalidOperationException();
             if (string.IsNullOrWhiteSpace(this.ManifestResourceName)) throw new InvalidOperationException();
+            if (string.IsNullOrWhiteSpace(this.FileName)) throw new InvalidOperationException();
 
-            return new EmbeddedResourceItem(PropertyName, ManifestResourceName);
+            return new EmbeddedResourceItem(PropertyName, ManifestResourceName, this.FileName);
         }
     }
 }

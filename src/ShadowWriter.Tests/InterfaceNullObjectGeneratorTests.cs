@@ -1,15 +1,18 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using StefanStolz.TestHelpers;
+using ShadowKit.Text;
 
 namespace ShadowWriter.Tests;
 
 [TestFixture]
-public class InterfaceNullObjectGeneratorTests {
+public class InterfaceNullObjectGeneratorTests
+{
     private const string EmptyInterfaceText =
         """
         namespace TestNamespace;
@@ -96,13 +99,15 @@ public class InterfaceNullObjectGeneratorTests {
         }
         """;
 
-    private static readonly IEqualityComparer<string> codeComparer = new StringComparerBuilder().IgnoreLineEndings().TrimLines().Build();
+    private static readonly IEqualityComparer<string> codeComparer =
+        new StringComparerBuilder().IgnoreLineEndings().TrimLines().Build();
 
     [Test]
     [TestCase(EmptyInterfaceText, ExpectedGeneratedCode, "NullEmptyInterface")]
     [TestCase(InterfaceWithMethod, ExpectedWithMethod, "NullSomeInterface")]
     [TestCase(InputWithMultipleMembers, ExpectedWithMultipleMembers, "NullSomeInterface")]
-    public async Task GenerateInterface(string input, string expected, string fileName) {
+    public async Task GenerateInterface(string input, string expected, string fileName)
+    {
         var generator = new NullObjectGenerator();
 
         var driver = CSharpGeneratorDriver.Create(generator);
@@ -128,7 +133,8 @@ public class InterfaceNullObjectGeneratorTests {
     }
 
     [Test]
-    public async Task GenerateMethodWithValueTypeReturn() {
+    public async Task GenerateMethodWithValueTypeReturn()
+    {
         var input = """
                     using System;
                     using System.Collections.Generic;
@@ -173,7 +179,8 @@ public class InterfaceNullObjectGeneratorTests {
     }
 
     [Test]
-    public async Task GenerateMethodWithTaskReturn() {
+    public async Task GenerateMethodWithTaskReturn()
+    {
         var input = """
                     using System;
                     using System.Collections.Generic;
@@ -218,7 +225,8 @@ public class InterfaceNullObjectGeneratorTests {
     }
 
     [Test]
-    public async Task GenerateMethodWithValueTaskReturn() {
+    public async Task GenerateMethodWithValueTaskReturn()
+    {
         var input = """
                     using System;
                     using System.Collections.Generic;
@@ -263,7 +271,8 @@ public class InterfaceNullObjectGeneratorTests {
     }
 
     [Test]
-    public async Task SetClassName() {
+    public async Task SetClassName()
+    {
         var input = """
                     using System;
                     using System.Collections.Generic;
@@ -307,5 +316,4 @@ public class InterfaceNullObjectGeneratorTests {
 
         txt.ShouldBe("System.Threading.Tasks.ValueTask");
     }
-
 }

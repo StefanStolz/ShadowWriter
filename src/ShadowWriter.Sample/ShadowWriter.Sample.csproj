@@ -33,5 +33,10 @@
       <EmbeddedResource Include="res\image2.jpg" />
     </ItemGroup>
 
+    
+    <ItemGroup>
+      <PackageReference Include="ShadowKit.IO" />
+    </ItemGroup>
+
     <Import Project="../ShadowWriter/ShadowWriter.targets" />
 </Project>

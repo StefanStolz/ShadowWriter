@@ -1,4 +1,5 @@
 using System;
+using ShadowKit.IO;
 
 namespace ShadowWriter.Sample;
 
