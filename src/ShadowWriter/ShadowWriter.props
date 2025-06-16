@@ -7,12 +7,12 @@
     <CompilerVisibleProperty Include="VersionPrefix" />
     <CompilerVisibleProperty Include="VersionSuffix" />
     <CompilerVisibleProperty Include="RootNamespace" />
-    <CompilerVisibleProperty Include="GenerateEmbeddedResources" />
+    <CompilerVisibleProperty Include="ShadowWriter_EnableEmbeddedResources" />
    
     <CompilerVisibleProperty Include="AllEmbeddedResources" />
   </ItemGroup>
 
-  <Target Name="BuildResourceList" BeforeTargets="BeforeBuild">
+  <Target Name="BuildResourceList" BeforeTargets="BeforeBuild" Condition=" '$(ShadowWriter_EnableEmbeddedResources)' == true">
     <PropertyGroup>
       <AllEmbeddedResources>@(EmbeddedResource, '|')</AllEmbeddedResources>
     </PropertyGroup>

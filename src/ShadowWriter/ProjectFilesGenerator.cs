@@ -31,7 +31,7 @@ public sealed class ProjectFilesGenerator : IIncrementalGenerator
         var properties = context.AnalyzerConfigOptionsProvider
             .Select((x, _) =>
             {
-                x.GlobalOptions.TryGetValue("build_property.GenerateEmbeddedResources",
+                x.GlobalOptions.TryGetValue("build_property.ShadowWriter_EnableEmbeddedResources",
                     out var generateEmbeddedResourcesText);
                 x.GlobalOptions.TryGetValue("build_property.RootNamespace", out var rootNamespace);
                 x.GlobalOptions.TryGetValue("build_property.AllEmbeddedResources", out var allEmbeddedResources);

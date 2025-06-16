@@ -6,25 +6,21 @@
         <Version>1.5.9</Version>
         <Nullable>enable</Nullable>
         <RootNamespace>ShadowWriter.Sample</RootNamespace>
-        <GenerateEmbeddedResources>true</GenerateEmbeddedResources>
+        <ShadowWriter_EnableEmbeddedResources>true</ShadowWriter_EnableEmbeddedResources>
     </PropertyGroup>
 
-    
     <ItemGroup>
         <ProjectReference Include="..\ShadowWriter\ShadowWriter.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
     </ItemGroup>
-
     
     <ItemGroup>
       <None Remove="res\Awesome.jpg" />
       <None Remove="res\Clint.jpg" />
     </ItemGroup>
-
     
     <ItemGroup>
       <Folder Include="res\" />
     </ItemGroup>
-
     
     <ItemGroup>
       <None Remove="res\image1.jpg" />
@@ -32,7 +28,6 @@
       <None Remove="res\image2.jpg" />
       <EmbeddedResource Include="res\image2.jpg" />
     </ItemGroup>
-
     
     <ItemGroup>
       <PackageReference Include="ShadowKit.IO" />
