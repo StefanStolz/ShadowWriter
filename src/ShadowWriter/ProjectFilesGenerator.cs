@@ -215,7 +215,7 @@ internal sealed class BuildEmbeddedResourceOutputModel
 
             classInfo.Items.Add(new EmbeddedResourceItem.Builder
             {
-                FileName = file,
+                FileName = name,
                 ManifestResourceName = $"{this.rootNamespace}.{nsx}{name}",
                 PropertyName = propertyName,
             });
