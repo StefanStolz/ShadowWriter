@@ -9,6 +9,8 @@ It currently supports the following features:
 
 ## ✨ Features
 
+Samples can be found in the [Source-Code](https://github.com/StefanStolz/ShadowWriter/tree/main/src/ShadowWriter.Sample).
+
 ### 1. Generate Null Objects
 Automatically generates implementations of interfaces or abstract classes that follow the *Null Object Pattern*.  
 These objects act as safe defaults and help avoid `null` references.
