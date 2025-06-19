@@ -19,6 +19,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0_Files", "0_Files", "{88F1
 		..\.editorconfig = ..\.editorconfig
 		..\.gitignore = ..\.gitignore
 		..\NOTES.md = ..\NOTES.md
+		..\README.md = ..\README.md
 	EndProjectSection
 EndProject
 Global

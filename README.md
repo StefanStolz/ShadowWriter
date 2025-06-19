@@ -12,8 +12,17 @@ It currently supports the following features:
 Samples can be found in the [Source-Code](https://github.com/StefanStolz/ShadowWriter/tree/main/src/ShadowWriter.Sample).
 
 ### 1. Generate Null Objects
-Automatically generates implementations of interfaces or abstract classes that follow the *Null Object Pattern*.  
-These objects act as safe defaults and help avoid `null` references.
+The NullObject feature in ShadowWriter provides a simple way to automatically generate null object implementations for interfaces and classes. This pattern is useful for providing default "do nothing" implementations that can help avoid null reference exceptions and simplify code.
+
+#### Usage
+To create a null object implementation, simply add the `[NullObject]` attribute to your class:
+
+```csharp
+[NullObject]
+public partial class ImplementingMyInterface : IMyInterface
+{
+}
+```
 
 ### 2. Inject Project Information
 Embeds values from the project file (`*.csproj`) directly into your source code.  
