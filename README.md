@@ -28,10 +28,34 @@ public partial class ImplementingMyInterface : IMyInterface
 Embeds values from the project file (`*.csproj`) directly into your source code.  
 This is useful for build metadata, version numbers, or project-specific configuration.
 
+#### Available Properties
+The generated `TheProject` class provides the following static properties:
+
+| Property | Description | Example |
+|----------|-------------|---------|
+| `FullPath` | The complete path to the project file | `/path/to/YourProject.csproj` |
+| `ProjectDirectory` | The directory containing the project file | `/path/to/` |
+| `Name` | The name of the project | `YourProject` |
+| `OutDir` | The output directory for compiled artifacts | `/path/to/artifacts/bin/YourProject/debug/` |
+| `Version` | The current version of the project | `1.0.0` |
+| `RootNamespace` | The root namespace of the project | `YourProject` |
+
+#### Example Usage
+
+```csharp
+// Access project information anywhere in your code 
+Console.WriteLine($"Project Name: {TheProject.Name}"); 
+Console.WriteLine($"Project Version: {TheProject.Version}"); 
+Console.WriteLine($"Project Output Directory: {TheProject.OutDir}");
+```
+
+
 ### 3. Experimental: Typed Access to EmbeddedResources
 Generates strongly typed wrappers for `EmbeddedResources`, allowing safe and convenient access to resources at runtime.
 
 > ⚠️ Feature #3 is experimental and may change significantly in future versions.
+
+Details can be found in the [Wiki](https://github.com/StefanStolz/ShadowWriter/wiki/ProjectFiles).
 
 ## 📦 Installation
 
