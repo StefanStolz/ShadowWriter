@@ -25,5 +25,25 @@
     </PropertyGroup>
     <Message Text="All embedded resources: $(AllEmbeddedResources)" Importance="High"/>
   </Target>
-  
+
+  <Target Name="EnsureSourceControlInfo" BeforeTargets="CoreCompile;GenerateAssemblyInfo">
+    <CallTarget Targets="InitializeSourceControlInformation" Condition="'$(SourceRevisionId)' == ''" />
+  </Target>
+
+  <!-- Make SourceLink properties available to source generators -->
+  <Target Name="PassSourceLinkToGenerators" BeforeTargets="CoreCompile" DependsOnTargets="EnsureSourceControlInfo">
+
+    <Message Text="SHIBBY" Importance="high" />
+    <Message Text="$(RepositoryUrl)" Importance="high" />
+    <Message Text="$(RepositoryCommit)" Importance="high" />
+    <Message Text="$(RepositoryBranch)" Importance="high" />
+    <Message Text="$(SourceRevisionId)" Importance="high" />
+
+    <ItemGroup>
+      <CompilerVisibleProperty Include="SourceRevisionId" />
+      <CompilerVisibleProperty Include="RepositoryUrl" />
+      <CompilerVisibleProperty Include="RepositoryBranch" />
+      <CompilerVisibleProperty Include="RepositoryCommit" />
+    </ItemGroup>
+  </Target>
 </Project>
