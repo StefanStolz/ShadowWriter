@@ -1,21 +1,29 @@
 <Project>
   <ItemGroup>
-    <CompilerVisibleProperty Include="MSBuildProjectFullPath" />
-    <CompilerVisibleProperty Include="MSBuildProjectName" />
-    <CompilerVisibleProperty Include="OutDir" />
-    <CompilerVisibleProperty Include="Version" />
-    <CompilerVisibleProperty Include="VersionPrefix" />
-    <CompilerVisibleProperty Include="VersionSuffix" />
-    <CompilerVisibleProperty Include="RootNamespace" />
-    <CompilerVisibleProperty Include="ShadowWriter_EnableEmbeddedResources" />
-   
-    <CompilerVisibleProperty Include="AllEmbeddedResources" />
+    <CompilerVisibleProperty Include="MSBuildProjectFullPath"/>
+    <CompilerVisibleProperty Include="MSBuildProjectName"/>
+    <CompilerVisibleProperty Include="OutDir"/>
+    <CompilerVisibleProperty Include="Version"/>
+    <CompilerVisibleProperty Include="VersionPrefix"/>
+    <CompilerVisibleProperty Include="VersionSuffix"/>
+    <CompilerVisibleProperty Include="RootNamespace"/>
+    <CompilerVisibleProperty Include="ShadowWriter_EnableEmbeddedResources"/>
+
+    <CompilerVisibleProperty Include="SourceRevisionId" />
+    <CompilerVisibleProperty Include="RepositoryUrl" />
+    <CompilerVisibleProperty Include="RepositoryBranch" />
+    <CompilerVisibleProperty Include="RepositoryCommit" />
+
+    <CompilerVisibleProperty Include="AllEmbeddedResources"/>
   </ItemGroup>
 
+  <Target Name="InitializeSourceControlInformationFromSourceControlManager" />
+  
   <Target Name="BuildResourceList" BeforeTargets="BeforeBuild" Condition=" '$(ShadowWriter_EnableEmbeddedResources)' == true">
     <PropertyGroup>
       <AllEmbeddedResources>@(EmbeddedResource, '|')</AllEmbeddedResources>
     </PropertyGroup>
-    <Message Text="All embedded resources: $(AllEmbeddedResources)" Importance="High" />
+    <Message Text="All embedded resources: $(AllEmbeddedResources)" Importance="High"/>
   </Target>
+  
 </Project>

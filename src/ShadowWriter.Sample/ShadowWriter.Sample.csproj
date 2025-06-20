@@ -6,6 +6,8 @@
         <Version>1.5.9</Version>
         <Nullable>enable</Nullable>
         <RootNamespace>ShadowWriter.Sample</RootNamespace>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <ShadowWriter_EnableEmbeddedResources>true</ShadowWriter_EnableEmbeddedResources>
     </PropertyGroup>
 
@@ -30,6 +32,10 @@
     </ItemGroup>
     
     <ItemGroup>
+      <PackageReference Include="Microsoft.SourceLink.GitHub">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
       <PackageReference Include="ShadowKit.IO" />
     </ItemGroup>
 

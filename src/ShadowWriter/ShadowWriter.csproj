@@ -5,7 +5,7 @@
         <IsPackable>true</IsPackable>
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
-        <VersionPrefix>0.0.25</VersionPrefix>
+        <VersionPrefix>0.0.27</VersionPrefix>
 
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
         <IsRoslynComponent>true</IsRoslynComponent>
