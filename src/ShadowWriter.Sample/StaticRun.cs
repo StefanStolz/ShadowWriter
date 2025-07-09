@@ -7,23 +7,42 @@ public static class StaticRun
 {
     public static void Main()
     {
-        Console.WriteLine($"FullPath: {TheProject.FullPath}");
-        Console.WriteLine($"Name: {TheProject.Name}");
-        Console.WriteLine($"OutDir: {TheProject.OutDir}");
-        Console.WriteLine($"Version: {TheProject.Version}");
-        Console.WriteLine($"RootNamespace: {TheProject.RootNamespace}");
+        // Console.WriteLine($"FullPath: {TheProject.FullPath}");
+        // Console.WriteLine($"Name: {TheProject.Name}");
+        // Console.WriteLine($"OutDir: {TheProject.OutDir}");
+        // Console.WriteLine($"Version: {TheProject.Version}");
+        // Console.WriteLine($"RootNamespace: {TheProject.RootNamespace}");
+        //
+        // Console.WriteLine("*******************");
+        // Console.WriteLine($"Files-Debug: {EmbeddedResources.DebugInfo}");
+        //
+        // // Console.WriteLine(EmbeddedResources.Image1Jpg.ResourceName);
+        // // Console.WriteLine(EmbeddedResources.Image2Jpg.ResourceName);
+        //
+        // var names = typeof(EmbeddedResources).Assembly.GetManifestResourceNames();
+        //
+        // foreach (string name in names)
+        // {
+        //     Console.WriteLine($"  {name}");
+        // }
 
-        Console.WriteLine("*******************");
-        Console.WriteLine($"Files-Debug: {EmbeddedResources.DebugInfo}");
 
-        // Console.WriteLine(EmbeddedResources.Image1Jpg.ResourceName);
-        // Console.WriteLine(EmbeddedResources.Image2Jpg.ResourceName);
+        var builder = new WithBuilderMultiple.Builder();
 
-        var names = typeof(EmbeddedResources).Assembly.GetManifestResourceNames();
+        builder.Number = 1;
+        builder.Number2 = 12;
+        builder.Enabled = true;
 
-        foreach (string name in names)
+        var item = builder.Build();
+
+        Console.WriteLine(item);
+
+        var b2 = new WithBuilderWithNonNullableString.Builder
         {
-            Console.WriteLine($"  {name}");
-        }
+            Text = "a",
+        };
+
+        var item2 = b2.Build();
+        Console.WriteLine(item2);
     }
 }

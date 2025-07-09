@@ -2,16 +2,19 @@
 
 using System;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Reflection;
 using System.Text;
-
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 
 namespace ShadowWriter;
 
-public record BuilderGeneratorArgs(bool BuildAttributeFound, bool IsRecord, RecordDeclarationSyntax? RecordDeclarationSyntax)
+public record BuilderGeneratorArgs(
+    bool BuildAttributeFound,
+    bool IsRecord,
+    RecordDeclarationSyntax? RecordDeclarationSyntax)
 {
     public static BuilderGeneratorArgs Empty => new(false, false, null);
 }
@@ -43,7 +46,8 @@ namespace {Namespace}
     public BuilderGenerator()
     {
         var versionAttribute = this.GetType().Assembly.GetCustomAttribute<AssemblyFileVersionAttribute>();
-        if (versionAttribute != null) {
+        if (versionAttribute != null)
+        {
             this.version = versionAttribute.Version;
         }
     }
@@ -51,31 +55,109 @@ namespace {Namespace}
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         context.RegisterPostInitializationOutput(ctx => ctx.AddSource(
-                                                     "BuilderAttribute.g.cs",
-                                                     SourceText.From(AttributeSourceCode, Encoding.UTF8)));
-
-        // IncrementalValuesProvider<BuilderGeneratorArgs> providerForRecords
-        //     = context.SyntaxProvider
-        //              .CreateSyntaxProvider(((node, _) => node is ClassDeclarationSyntax),
-        //                                    (syntaxContext, _) => GetBuilderGeneratorArgs(syntaxContext))
-        //              .Where(t => t.BuildAttributeFound && t.IsRecord);
-        //
-        // context.RegisterSourceOutput(context.CompilationProvider.Combine(providerForRecords.Collect()),
-        //                              (ctx, t) => this.GenerateCode(ctx, t.Left, t.Right));
+            "BuilderAttribute.g.cs",
+            SourceText.From(AttributeSourceCode, Encoding.UTF8)));
 
         var recordProvider = context.SyntaxProvider.ForAttributeWithMetadataName(
-                                        fullyQualifiedMetadataName: $"{Namespace}.{BuilderAttributeName}",
-                                        predicate: static (node, _) => node is RecordDeclarationSyntax,
-                                        transform: static (ctx, _) => GetBuilderGeneratorArgs(ctx))
-                                    .Where(t => t.BuildAttributeFound && t.IsRecord);
+                fullyQualifiedMetadataName: $"{Namespace}.{BuilderAttributeName}",
+                predicate: static (node, _) => node is RecordDeclarationSyntax,
+                transform: static (ctx, _) => GetBuilderGeneratorArgs(ctx))
+            .Where(t => t.BuildAttributeFound && t.IsRecord);
 
         context.RegisterSourceOutput(context.CompilationProvider.Combine(recordProvider.Collect()),
-                                     (ctx, t) => this.GenerateCode(ctx, t.Left, t.Right));
+            (ctx, t) => this.GenerateCode(ctx, t.Left, t.Right));
     }
 
-    private void GenerateCode(SourceProductionContext ctx, Compilation compilation, ImmutableArray<BuilderGeneratorArgs> args)
+    private void GenerateCode(SourceProductionContext context, Compilation compilation,
+        ImmutableArray<BuilderGeneratorArgs> args)
     {
         if (args.IsEmpty) return;
+
+        foreach (var builderGeneratorArgs in args)
+        {
+            var recordDeclarationSyntax = builderGeneratorArgs.RecordDeclarationSyntax!;
+            var semanticModel = compilation.GetSemanticModel(recordDeclarationSyntax.SyntaxTree);
+
+            if (semanticModel.GetDeclaredSymbol(recordDeclarationSyntax) is not
+                INamedTypeSymbol recordSymbol)
+            {
+                continue;
+            }
+
+            string namespaceName = recordSymbol.ContainingNamespace.ToDisplayString();
+
+            var recordName = recordSymbol.Name;
+
+            bool makeNullableEnabled = compilation.Options.NullableContextOptions == NullableContextOptions.Enable;
+
+            var body = this.CreateClassBody(recordDeclarationSyntax, recordSymbol, compilation);
+
+            var accessibility = ToCodeString(recordSymbol.DeclaredAccessibility);
+
+            string code = $$"""
+                            using System;
+                            using System.Threading.Tasks;
+                            using System.CodeDom.Compiler;
+                            using System.Runtime.CompilerServices;
+
+                            #nullable {{(makeNullableEnabled ? "enable" : "disable")}}
+
+                            namespace {{namespaceName}};
+
+                            [CompilerGenerated]
+                            [GeneratedCode("ShadowWriter", "{{version}}")]
+                            {{accessibility}} partial record {{recordName}}
+                            {
+                                {{body}}
+                            }
+                            """;
+
+            string cleanNamespace = namespaceName.Replace(".", "");
+            context.AddSource($"{cleanNamespace}{recordName}.g.cs", SourceText.From(code, Encoding.UTF8));
+        }
+    }
+
+    private string CreateClassBody(RecordDeclarationSyntax recordSyntax, INamedTypeSymbol recordSymbol,
+        Compilation compilation)
+    {
+        var codeBuilder = new IndentedStringBuilder("  ", 1);
+
+        var primaryCtor = recordSymbol.InstanceConstructors.FirstOrDefault();
+
+        if (primaryCtor is not null)
+        {
+            bool makeNullableEnabled = compilation.Options.NullableContextOptions == NullableContextOptions.Enable;
+
+            foreach (var parameter in primaryCtor.Parameters)
+            {
+                string required = string.Empty;
+                if (makeNullableEnabled && parameter.Type.IsReferenceType)
+                {
+                    required = "required ";
+                }
+
+                codeBuilder.AppendLine($"// Parameter: {parameter.Name}: {parameter.Type}");
+                codeBuilder.AppendLine($"public {required}{parameter.Type} {parameter.Name} {{ get; set; }}");
+            }
+
+            codeBuilder.AppendLine($"public {recordSymbol.Name} Build()");
+            codeBuilder.AppendLine("{");
+            using (codeBuilder.BeginBlock())
+            {
+                codeBuilder.Append("return new(");
+                codeBuilder.Append(string.Join(", ", primaryCtor.Parameters.Select(x => $"this.{x.Name}")));
+                codeBuilder.AppendLine(");");
+            }
+
+            codeBuilder.AppendLine("}");
+        }
+
+        return $$"""
+                 public sealed class Builder
+                 {
+                     {{codeBuilder}}
+                 }
+                 """;
     }
 
     private static BuilderGeneratorArgs GetBuilderGeneratorArgs(GeneratorAttributeSyntaxContext syntaxContext)
@@ -85,6 +167,18 @@ namespace {Namespace}
         if (!IsRecord(symbol)) return BuilderGeneratorArgs.Empty;
 
         return new BuilderGeneratorArgs(true, true, syntaxContext.TargetNode as RecordDeclarationSyntax);
+    }
+
+    private static string ToCodeString(Accessibility value)
+    {
+        return value switch
+        {
+            Accessibility.Public => "public",
+            Accessibility.Internal => "internal",
+            Accessibility.Private => "private",
+            Accessibility.Protected => "protected",
+            _ => throw new NotSupportedException($"{value} not supported at the moment")
+        };
     }
 
     private static bool IsRecord(INamedTypeSymbol typeSymbol)
