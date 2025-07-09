@@ -37,5 +37,7 @@ public class BuilderGeneratorTests
         var code = (await generated.GetTextAsync()).ToString();
 
         await TestContext.Out.WriteLineAsync(code);
+
+        Assert.That(code, Is.Not.Empty);
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using ShadowKit.IO;
 
 namespace ShadowWriter.Sample;
@@ -40,6 +41,7 @@ public static class StaticRun
         var b2 = new WithBuilderWithNonNullableString.Builder
         {
             Text = "a",
+            Stream = Stream.Null
         };
 
         var item2 = b2.Build();
