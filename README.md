@@ -57,12 +57,45 @@ Generates strongly typed wrappers for `EmbeddedResources`, allowing safe and con
 
 Details can be found in the [Wiki](https://github.com/StefanStolz/ShadowWriter/wiki/ProjectFiles).
 
+### 4. Generate Builders for Records
+
+The **Builder** feature in ShadowWriter automatically generates builder classes for your `record` types. This significantly reduces boilerplate when constructing complex objects, especially with optional and nullable parameters or when you want to use a fluent API pattern for object creation.
+
+#### Usage
+
+To enable builder generation, simply annotate your partial `record` with the `[Builder]` attribute:
+
+```csharp 
+[Builder] 
+public partial record WithBuilder(int Number);
+```
+
+The generator will create a corresponding builder class (e.g., `WithBuilderBuilder`) with fluent setter methods for each parameter.
+
+#### Examples
+
+A variety of record types are supported:
+
+```csharp 
+// Record with a single value type 
+[Builder] 
+public partial record WithBuilder(int Number);
+```
+
+The generated builder enables you to create instances using a clear, chainable API. For example:
+
+```csharp
+var builder = new WithBuilder.Builder();
+builder.Number = 1;
+var item = builder.Build();
+```
+
 ## 📦 Installation
 
 You can install ShadowWriter via NuGet:
 
 ```sh
-dotnet add package ShadowWriter
+dotnet package add ShadowWriter
 ```
 
 ⚙️ Usage
