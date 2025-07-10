@@ -70,7 +70,7 @@ To enable builder generation, simply annotate your partial `record` with the `[B
 public partial record WithBuilder(int Number);
 ```
 
-The generator will create a corresponding builder class (e.g., `WithBuilderBuilder`) with fluent setter methods for each parameter.
+The generator will create a corresponding builder class (e.g., `WithBuilder.Builder`) with mutable Properties for each Parameter.
 
 #### Examples
 
