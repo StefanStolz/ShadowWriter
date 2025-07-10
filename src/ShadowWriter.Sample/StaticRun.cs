@@ -40,7 +40,6 @@ public static class StaticRun
 
         var b2 = new WithBuilderWithNonNullableString.Builder
         {
-            Text = "a",
             Stream = Stream.Null
         };
 

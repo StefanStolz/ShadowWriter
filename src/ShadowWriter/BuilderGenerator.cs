@@ -131,13 +131,20 @@ namespace {Namespace}
             foreach (var parameter in primaryCtor.Parameters)
             {
                 string required = string.Empty;
+                string propertyInitializer = string.Empty;
                 if (makeNullableEnabled && parameter.Type.IsReferenceType)
                 {
                     required = "required ";
                 }
 
+                if (parameter.Type.SpecialType == SpecialType.System_String)
+                {
+                    required = String.Empty;
+                    propertyInitializer = " = \"\";";
+                }
+
                 codeBuilder.AppendLine($"// Parameter: {parameter.Name}: {parameter.Type}");
-                codeBuilder.AppendLine($"public {required}{parameter.Type} {parameter.Name} {{ get; set; }}");
+                codeBuilder.AppendLine($"public {required}{parameter.Type} {parameter.Name} {{ get; set; }}{propertyInitializer}");
             }
 
             codeBuilder.AppendLine($"public {recordSymbol.Name} Build()");
