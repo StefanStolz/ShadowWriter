@@ -6,3 +6,4 @@ namespace ShadowWriter.Sample;
 [NullObject]
 public sealed partial class ClassWithMultipleInterfaces : IDisposable, IAsyncDisposable {
 }
+

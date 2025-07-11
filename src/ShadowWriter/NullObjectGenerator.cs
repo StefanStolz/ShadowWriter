@@ -101,11 +101,9 @@ namespace {Namespace}
         foreach (ClassNullObjectGeneratorArgs? arg in args)
         {
             ClassDeclarationSyntax classDeclaration = arg.ClassDeclarationSyntax;
-            SyntaxTree tree = classDeclaration.SyntaxTree;
-            SyntaxNode root = tree.GetRoot();
             SemanticModel semanticModel = compilation.GetSemanticModel(classDeclaration.SyntaxTree);
             ISymbol? classSymbol =
-                semanticModel.GetDeclaredSymbol(root.DescendantNodes().OfType<ClassDeclarationSyntax>().First());
+                semanticModel.GetDeclaredSymbol(classDeclaration);
 
             bool makeNullableEnabled = compilation.Options.NullableContextOptions == NullableContextOptions.Enable;
 
@@ -252,15 +250,31 @@ namespace {Namespace}
 
                     codeBuilder.AppendLine($"// {x}");
 
+                    string methodReturn = GenerateMethodReturn(compilation, ms);
+
+                    bool makePartial = string.IsNullOrWhiteSpace(methodReturn);
+
                     codeBuilder.Append("public ");
+                    if (makePartial)
+                    {
+                        codeBuilder.Append("partial ");
+                    }
                     codeBuilder.Append(ms.ReturnType.ToDisplayString());
                     codeBuilder.Append(" ");
                     codeBuilder.Append(member.Name);
                     codeBuilder.Append("(");
                     codeBuilder.Append(string.Join(", ", parameters));
                     codeBuilder.Append(")");
-                    codeBuilder.AppendLine();
-                    codeBuilder.AppendLine(GenerateMethodReturn(compilation, ms));
+
+                    if (!string.IsNullOrWhiteSpace(methodReturn))
+                    {
+                        codeBuilder.AppendLine();
+                        codeBuilder.AppendLine(methodReturn);
+                    }
+                    else
+                    {
+                        codeBuilder.AppendLine(";");
+                    }
                 }
             }
         }
