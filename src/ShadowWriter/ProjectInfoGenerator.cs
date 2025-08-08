@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Reflection;
 using System.Text;
@@ -46,6 +47,8 @@ public sealed class ProjectInfoGenerator : IIncrementalGenerator
 
     private void GenerateCode(SourceProductionContext context, ProjectInfo projectInfo)
     {
+        var now = DateTimeOffset.UtcNow;
+
         var code =
             $$"""
               using System;
@@ -64,6 +67,7 @@ public sealed class ProjectInfoGenerator : IIncrementalGenerator
                 public static string OutDir => @"{{Path.GetFullPath(projectInfo.OutDir)}}";
                 public static string Version => @"{{projectInfo.Version}}";
                 public static string RootNamespace => @"{{projectInfo.RootNamespace}}";
+                public static DateTimeOffset BuildTimeUtc => new DateTimeOffset({{now.Ticks}}, TimeSpan.Zero);
               }
               """;
 
