@@ -118,7 +118,6 @@ public class ClassNullObjectGeneratorTests
 
                         // GetShibby
                         public partial TestNamespace.Shibby GetShibby()  ;
-
                       }
                       """, StringCompareShould.IgnoreLineEndings | StringCompareShould.IgnoreCase);
     }
