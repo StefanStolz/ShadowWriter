@@ -137,7 +137,7 @@ namespace {Namespace}
 
                                   public static {{classSymbol}} Instance { get; } = new {{className}}();
 
-                                {{body}}
+                                {{body.TrimEnd()}}
                                 }
                                 """;
 
@@ -236,14 +236,63 @@ namespace {Namespace}
 
     private string CreateBodyClassBody(ImmutableArray<INamedTypeSymbol> implementedInterfaces, Compilation compilation)
     {
+        bool IsIEnumerableOfT(ITypeSymbol typeSymbol)
+        {
+            if (typeSymbol is INamedTypeSymbol namedTypeSymbol)
+            {
+                return namedTypeSymbol.ConstructedFrom.SpecialType ==
+                       SpecialType.System_Collections_Generic_IEnumerable_T;
+            }
+
+            return false;
+        }
+
         IndentedStringBuilder codeBuilder = new("  ", 1);
 
         foreach (INamedTypeSymbol namedTypeSymbol in implementedInterfaces)
         {
             foreach (ISymbol member in namedTypeSymbol.GetMembers())
             {
-                if (member is IMethodSymbol ms)
+                if (member is IPropertySymbol propertySymbol)
                 {
+                    if (propertySymbol.GetMethod is not null)
+                    {
+                        string returnValue = "default";
+
+                        if (propertySymbol.Type.SpecialType == SpecialType.System_String)
+                        {
+                            returnValue = "string.Empty";
+                        }
+                        else if (IsIEnumerableOfT(propertySymbol.Type))
+                        {
+                            returnValue = "[]";
+                        }
+
+                        if (propertySymbol.SetMethod is null)
+                        {
+                            // Get only
+                            codeBuilder.AppendLine(
+                                $"public {propertySymbol.Type.ToDisplayString()} {propertySymbol.Name} => {returnValue};");
+                        }
+                        else
+                        {
+                            // Get and Set
+                            codeBuilder.AppendLine(
+                                $"public {propertySymbol.Type.ToDisplayString()} {propertySymbol.Name}");
+                            codeBuilder.AppendLine("{");
+                            codeBuilder.AppendLine($"get => {returnValue};");
+                            codeBuilder.AppendLine("set => _ = value;");
+                            codeBuilder.AppendLine("}");
+                        }
+                    }
+                }
+                else if (member is IMethodSymbol ms)
+                {
+                    if (ms.MethodKind == MethodKind.PropertyGet || ms.MethodKind == MethodKind.PropertySet)
+                    {
+                        continue;
+                    }
+
                     string x = member.Name;
 
                     List<string> parameters = GeneratorParameterList(ms);
@@ -259,6 +308,7 @@ namespace {Namespace}
                     {
                         codeBuilder.Append("partial ");
                     }
+
                     codeBuilder.Append(ms.ReturnType.ToDisplayString());
                     codeBuilder.Append(" ");
                     codeBuilder.Append(member.Name);

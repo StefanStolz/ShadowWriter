@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
@@ -120,5 +121,48 @@ public class ClassNullObjectGeneratorTests
 
                       }
                       """, StringCompareShould.IgnoreLineEndings | StringCompareShould.IgnoreCase);
+    }
+
+    [Test]
+    public async Task ClassWithWithProperties()
+    {
+        const string input = """
+                             using System;
+                             using System.Collections.Generic;
+                             using System.Threading.Tasks;
+
+                             namespace TestNamespace;
+
+
+                             public interface IHaveProperties {
+                                int Number { get; }
+                                string Text { get; }
+
+                                IEnumerable<string> AnEnumerable { get; }
+                             }
+
+                             [ShadowWriter.NullObject]
+                             public partial class NullHaveProperties : IHaveProperties {
+
+                             }
+                             """;
+
+        var generator = new NullObjectGenerator();
+
+        var driver = CSharpGeneratorDriver.Create(generator);
+
+        var compilation = CSharpCompilation.Create(
+            nameof(InterfaceNullObjectGeneratorTests),
+            [CSharpSyntaxTree.ParseText(input)],
+            [MetadataReference.CreateFromFile(typeof(object).Assembly.Location)]
+        );
+
+        var runResult = driver.RunGenerators(compilation).GetRunResult();
+
+        var generated = runResult.GeneratedTrees.Single(x => x.FilePath.Contains("NullHaveProperties"));
+
+        var code = (await generated.GetTextAsync()).ToString();
+
+        await TestContext.Out.WriteLineAsync(code);
     }
 }
