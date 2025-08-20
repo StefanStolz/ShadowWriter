@@ -98,9 +98,9 @@ You can install ShadowWriter via NuGet:
 dotnet package add ShadowWriter
 ```
 
-⚙️ Usage
+## ⚙️ Usage
 ShadowWriter runs automatically during compilation.
 No manual setup is needed. Documentation and configuration options will be expanded in future versions.
 
-📄 License
+## 📄 License
 This project is licensed under the MIT License.
