@@ -163,5 +163,25 @@ public class ClassNullObjectGeneratorTests
         var code = (await generated.GetTextAsync()).ToString();
 
         await TestContext.Out.WriteLineAsync(code);
+
+        var root = await generated.GetRootAsync();
+
+        var generatedClass = root.DescendantNodes().OfType<ClassDeclarationSyntax>().Single();
+
+        generatedClass.Identifier.Value.ShouldBe("NullHaveProperties");
+
+        var properties = generatedClass.Members.OfType<PropertyDeclarationSyntax>().Select(p => new
+        {
+            Name = p.Identifier.ValueText,
+            Type = p.Type.ToString().Trim(),
+            Modifiers = p.Modifiers.ToString().Trim()
+        }).ToArray();
+
+        var one = new { Name = "Instance", Type = "TestNamespace.NullHaveProperties", Modifiers = "public static" };
+        var two = new { Name = "Number", Type = "int", Modifiers = "public" };
+        var three = new { Name = "Text", Type = "string", Modifiers = "public" };
+        var four = new { Name = "AnEnumerable", Type = "System.Collections.Generic.IEnumerable<string>", Modifiers = "public" };
+
+        properties.ShouldBeEquivalentTo(new[] { one, two, three, four });
     }
 }
