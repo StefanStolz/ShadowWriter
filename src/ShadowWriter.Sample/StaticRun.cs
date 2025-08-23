@@ -28,6 +28,8 @@ public static class StaticRun
         // }
 
 
+        var i = NullHaveProperties.Instance;
+
         var builder = new WithBuilderMultiple.Builder();
 
         builder.Number = 1;

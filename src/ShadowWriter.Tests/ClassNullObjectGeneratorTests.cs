@@ -33,7 +33,7 @@ public class ClassNullObjectGeneratorTests
         var driver = CSharpGeneratorDriver.Create(generator);
 
         var compilation = CSharpCompilation.Create(
-            nameof(InterfaceNullObjectGeneratorTests),
+            nameof(ClassNullObjectGeneratorTests),
             [CSharpSyntaxTree.ParseText(input)],
             [MetadataReference.CreateFromFile(typeof(object).Assembly.Location)]
         );
@@ -86,12 +86,14 @@ public class ClassNullObjectGeneratorTests
         var driver = CSharpGeneratorDriver.Create(generator);
 
         var compilation = CSharpCompilation.Create(
-            nameof(InterfaceNullObjectGeneratorTests),
+            nameof(ClassNullObjectGeneratorTests),
             [CSharpSyntaxTree.ParseText(input)],
             [MetadataReference.CreateFromFile(typeof(object).Assembly.Location)]
         );
 
         var runResult = driver.RunGenerators(compilation).GetRunResult();
+
+        var diagnostic = runResult.Diagnostics.ShouldHaveSingleItem();
 
         var generated = runResult.GeneratedTrees.Single(x => x.FilePath.Contains("NullShibby"));
 
@@ -117,7 +119,6 @@ public class ClassNullObjectGeneratorTests
                         public static TestNamespace.NullShibby Instance { get; } = new NullShibby();
 
                         // GetShibby
-                        public partial TestNamespace.Shibby GetShibby()  ;
                       }
                       """, StringCompareShould.IgnoreLineEndings | StringCompareShould.IgnoreCase);
     }
@@ -151,7 +152,7 @@ public class ClassNullObjectGeneratorTests
         var driver = CSharpGeneratorDriver.Create(generator);
 
         var compilation = CSharpCompilation.Create(
-            nameof(InterfaceNullObjectGeneratorTests),
+            nameof(ClassNullObjectGeneratorTests),
             [CSharpSyntaxTree.ParseText(input)],
             [MetadataReference.CreateFromFile(typeof(object).Assembly.Location)]
         );
@@ -180,8 +181,52 @@ public class ClassNullObjectGeneratorTests
         var one = new { Name = "Instance", Type = "TestNamespace.NullHaveProperties", Modifiers = "public static" };
         var two = new { Name = "Number", Type = "int", Modifiers = "public" };
         var three = new { Name = "Text", Type = "string", Modifiers = "public" };
-        var four = new { Name = "AnEnumerable", Type = "System.Collections.Generic.IEnumerable<string>", Modifiers = "public" };
+        var four = new
+            { Name = "AnEnumerable", Type = "System.Collections.Generic.IEnumerable<string>", Modifiers = "public" };
 
         properties.ShouldBeEquivalentTo(new[] { one, two, three, four });
+    }
+
+    [Test]
+    public async Task EnrichClassWithComplexProperties()
+    {
+        const string input = """
+                             using System;
+                             using System.Collections.Generic;
+                             using System.Threading.Tasks;
+
+                             namespace TestNamespace;
+
+                             public interface IOtherInterface {
+                                int Number { get; }
+                             }
+
+                             public interface IHaveProperties {
+                                IOtherInterface Other { get; }
+                             }
+
+                             [ShadowWriter.NullObject]
+                             public partial class NullHaveProperties : IHaveProperties {
+
+                             }
+                             """;
+
+        var generator = new NullObjectGenerator();
+
+        var driver = CSharpGeneratorDriver.Create(generator);
+
+        var compilation = CSharpCompilation.Create(
+            nameof(ClassNullObjectGeneratorTests),
+            [CSharpSyntaxTree.ParseText(input)],
+            [MetadataReference.CreateFromFile(typeof(object).Assembly.Location)]
+        );
+
+        var runResult = driver.RunGenerators(compilation).GetRunResult();
+        var generated = runResult.GeneratedTrees.Single(x => x.FilePath.Contains("NullHaveProperties"));
+        var code = (await generated.GetTextAsync()).ToString();
+        await TestContext.Out.WriteLineAsync(code);
+        var root = await generated.GetRootAsync();
+        var generatedClass = root.DescendantNodes().OfType<ClassDeclarationSyntax>().Single();
+
     }
 }
