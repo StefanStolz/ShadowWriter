@@ -1,15 +1,14 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using RoslynVerifier;
 using ShadowKit.Text;
 using ShadowWriter.NullObject;
 
-namespace ShadowWriter.Tests;
+namespace ShadowWriter.Tests.NullObject;
 
 [TestFixture]
 public class InterfaceNullObjectGeneratorTests
@@ -171,14 +170,10 @@ public class InterfaceNullObjectGeneratorTests
         var root = await syntaxTree.GetRootAsync();
         var clazz = root.DescendantNodes().OfType<ClassDeclarationSyntax>().Single();
 
-        clazz.Identifier.Value.ShouldBe("NullSut");
+        var verifier = Verifier.From(clazz);
 
-        var method = clazz.Members.OfType<MethodDeclarationSyntax>().Single();
-
-        method.Identifier.Value.ShouldBe("Method");
-        var txt = method.ReturnType.GetText().ToString().Trim();
-
-        txt.ShouldBe("int");
+        verifier.ShouldHaveName("NullSut");
+        verifier.ShouldHaveMethod("Method").WithReturnType("int");
     }
 
     [Test]
@@ -217,14 +212,10 @@ public class InterfaceNullObjectGeneratorTests
         var root = await syntaxTree.GetRootAsync();
         var clazz = root.DescendantNodes().OfType<ClassDeclarationSyntax>().Single();
 
-        clazz.Identifier.Value.ShouldBe("NullSut");
-
-        var method = clazz.Members.OfType<MethodDeclarationSyntax>().Single();
-
-        method.Identifier.Value.ShouldBe("Method");
-        var txt = method.ReturnType.GetText().ToString().Trim();
-
-        txt.ShouldBe("System.Threading.Tasks.Task");
+        var verifier = Verifier.From(clazz);
+        verifier.ShouldHaveName("NullSut");
+        verifier.ShouldHaveMethod("Method")
+            .WithReturnType("System.Threading.Tasks.Task");
     }
 
     [Test]
@@ -263,14 +254,10 @@ public class InterfaceNullObjectGeneratorTests
         var root = await syntaxTree.GetRootAsync();
         var clazz = root.DescendantNodes().OfType<ClassDeclarationSyntax>().Single();
 
-        clazz.Identifier.Value.ShouldBe("NullSut");
-
-        var method = clazz.Members.OfType<MethodDeclarationSyntax>().Single();
-
-        method.Identifier.Value.ShouldBe("Method");
-        var txt = method.ReturnType.GetText().ToString().Trim();
-
-        txt.ShouldBe("System.Threading.Tasks.ValueTask");
+        var verifier = Verifier.From(clazz);
+        verifier.ShouldHaveName("NullSut");
+        verifier.ShouldHaveMethod("Method")
+            .WithReturnType("System.Threading.Tasks.ValueTask");
     }
 
     [Test]
@@ -308,15 +295,12 @@ public class InterfaceNullObjectGeneratorTests
 
         var syntaxTree = CSharpSyntaxTree.ParseText(code);
         var root = await syntaxTree.GetRootAsync();
+
         var clazz = root.DescendantNodes().OfType<ClassDeclarationSyntax>().Single();
 
-        clazz.Identifier.Value.ShouldBe("abcd");
-
-        var method = clazz.Members.OfType<MethodDeclarationSyntax>().Single();
-
-        method.Identifier.Value.ShouldBe("Method");
-        var txt = method.ReturnType.GetText().ToString().Trim();
-
-        txt.ShouldBe("System.Threading.Tasks.ValueTask");
+        var verifier = Verifier.From(clazz);
+        verifier.ShouldHaveName("abcd");
+        verifier.ShouldHaveMethod("Method")
+            .WithReturnType("System.Threading.Tasks.ValueTask");
     }
 }

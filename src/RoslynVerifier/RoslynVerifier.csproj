@@ -1,15 +1,9 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
-        <Nullable>enable</Nullable>
-
-        <IsPackable>false</IsPackable>
-        <IsTestProject>true</IsTestProject>
-
-        <RootNamespace>ShadowWriter.Tests</RootNamespace>
+        <TargetFramework>netstandard2.0</TargetFramework>
     </PropertyGroup>
-
+    
     <ItemGroup>
         <PackageReference Include="Microsoft.CodeAnalysis.Analyzers">
             <PrivateAssets>all</PrivateAssets>
@@ -19,11 +13,6 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>all</IncludeAssets>
         </PackageReference>
-    </ItemGroup>
-
-    <ItemGroup>
-        <ProjectReference Include="..\RoslynVerifier\RoslynVerifier.csproj" />
-        <ProjectReference Include="..\ShadowWriter\ShadowWriter.csproj"/>
     </ItemGroup>
 
 </Project>

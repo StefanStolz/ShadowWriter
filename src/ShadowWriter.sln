@@ -22,6 +22,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0_Files", "0_Files", "{88F1
 		..\README.md = ..\README.md
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RoslynVerifier", "RoslynVerifier\RoslynVerifier.csproj", "{13478955-C103-4C05-A473-2C0D2673384C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -42,5 +44,9 @@ Global
 		{0C2D5FA8-4016-4BF5-BBDA-42657717B5BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0C2D5FA8-4016-4BF5-BBDA-42657717B5BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0C2D5FA8-4016-4BF5-BBDA-42657717B5BF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{13478955-C103-4C05-A473-2C0D2673384C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{13478955-C103-4C05-A473-2C0D2673384C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{13478955-C103-4C05-A473-2C0D2673384C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{13478955-C103-4C05-A473-2C0D2673384C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

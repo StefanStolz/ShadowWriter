@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
@@ -7,7 +5,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using ShadowWriter.NullObject;
 
-namespace ShadowWriter.Tests;
+namespace ShadowWriter.Tests.NullObject;
 
 [TestFixture]
 public class ClassNullObjectGeneratorTests
