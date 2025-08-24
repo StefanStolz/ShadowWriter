@@ -6,7 +6,7 @@
         <Version>1.5.9</Version>
         <Nullable>enable</Nullable>
         <RootNamespace>ShadowWriter.Sample</RootNamespace>
-        <ShadowWriter_EnableEmbeddedResources>true</ShadowWriter_EnableEmbeddedResources>
+        <ShadowWriter_EnableEmbeddedResources>false</ShadowWriter_EnableEmbeddedResources>
     </PropertyGroup>
 
     <ItemGroup>

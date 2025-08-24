@@ -1,6 +1,7 @@
+using System.Linq;
 using Microsoft.CodeAnalysis;
 
-namespace ShadowWriter;
+namespace ShadowWriter.NullObject;
 
 public sealed record NullObjectTypeInfo(bool Supported, string ReturnValue, bool IncludeReturn = true);
 
@@ -26,7 +27,7 @@ public sealed class NullObjectTypeInfoHandler
 
     private bool IsValueTask(ITypeSymbol typeSymbol)
     {
-        INamedTypeSymbol? taskType = compilation.GetTypeByMetadataName("System.Threading.Tasks.ValueTask");
+        INamedTypeSymbol? taskType = this.compilation.GetTypeByMetadataName("System.Threading.Tasks.ValueTask");
 
         return SymbolEqualityComparer.Default.Equals(typeSymbol, taskType);
     }
@@ -34,14 +35,14 @@ public sealed class NullObjectTypeInfoHandler
 
     private bool IsTask(ITypeSymbol typeSymbol)
     {
-        INamedTypeSymbol? taskType = compilation.GetTypeByMetadataName("System.Threading.Tasks.Task");
+        INamedTypeSymbol? taskType = this.compilation.GetTypeByMetadataName("System.Threading.Tasks.Task");
 
         return SymbolEqualityComparer.Default.Equals(typeSymbol, taskType);
     }
 
     public NullObjectTypeInfo GetTypeInfo(ITypeSymbol typeSymbol)
     {
-        if (IsValueTask(typeSymbol))
+        if (this.IsValueTask(typeSymbol))
         {
             return new NullObjectTypeInfo(true, "ValueTask.CompletedTask");
         }
@@ -52,12 +53,20 @@ public sealed class NullObjectTypeInfoHandler
             case (_, SpecialType.System_String): return new NullObjectTypeInfo(true, "string.Empty");
         }
 
-        if (IsIEnumerableOfT(typeSymbol))
+        if (this.IsIEnumerableOfT(typeSymbol))
         {
+            if (typeSymbol is INamedTypeSymbol namedTypeSymbol)
+            {
+                var typeArgument = namedTypeSymbol.TypeArguments.Single();
+
+                return new NullObjectTypeInfo(true, "Enumerable.Empty<" + typeArgument.ToDisplayString() + ">()");
+            }
+
+
             return new NullObjectTypeInfo(true, "yield break", IncludeReturn: false);
         }
 
-        if (IsTask(typeSymbol))
+        if (this.IsTask(typeSymbol))
         {
             return new NullObjectTypeInfo(true, "Task.CompletedTask");
         }

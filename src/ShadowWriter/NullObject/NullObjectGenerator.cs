@@ -8,7 +8,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 
-namespace ShadowWriter;
+namespace ShadowWriter.NullObject;
 
 [Generator]
 public sealed class NullObjectGenerator : IIncrementalGenerator
@@ -38,7 +38,7 @@ using System.Runtime.CompilerServices;
 namespace {Namespace}
 {{
     [CompilerGenerated]
-    [GeneratedCode(""ShadowWriter"", ""{version}"")]
+    [GeneratedCode(""ShadowWriter"", ""{this.version}"")]
     [System.AttributeUsage(AttributeTargets.Interface | AttributeTargets.Class)]
     internal sealed class {NullObjectAttributeName} : System.Attribute
     {{
@@ -46,7 +46,7 @@ namespace {Namespace}
     }}
 
     [CompilerGenerated]
-    [GeneratedCode(""ShadowWriter"", ""{version}"")]
+    [GeneratedCode(""ShadowWriter"", ""{this.version}"")]
     [System.AttributeUsage(System.AttributeTargets.Interface)]
     internal sealed class {ClassNameAttributeName} : System.Attribute
     {{
@@ -77,7 +77,7 @@ namespace {Namespace}
     {
         context.RegisterPostInitializationOutput(ctx => ctx.AddSource(
             "NullObjectAttribute.g.cs",
-            SourceText.From(AttributeSourceCode, Encoding.UTF8)));
+            SourceText.From(this.AttributeSourceCode, Encoding.UTF8)));
 
         IncrementalValuesProvider<InterfaceNullObjectGeneratorArgs> providerForInterfaces
             = context.SyntaxProvider
@@ -95,7 +95,6 @@ namespace {Namespace}
                 .Where(t => t.NullObjectAttributeFound)
                 .Select((t, _) => t);
 
-        // Generate the source code.
         context.RegisterSourceOutput(
             context.CompilationProvider.Combine(providerForInterfaces.Collect()),
             (ctx, t) => this.GenerateFullClassForInterface(ctx, t.Left, t.Right));
@@ -108,55 +107,11 @@ namespace {Namespace}
     private void GenerateNullObjectInPartialClass(SourceProductionContext context, Compilation compilation,
         ImmutableArray<ClassNullObjectGeneratorArgs> args)
     {
-        var nullObjectTypeInfoHandler = new NullObjectTypeInfoHandler(compilation);
+        var generateNullObjectInPartialClass =
+            new GenerateNullObjectInPartialClass(this.version, this.unsupportedReturnTypeDescriptor, compilation);
 
-        foreach (ClassNullObjectGeneratorArgs? arg in args)
-        {
-            ClassDeclarationSyntax classDeclaration = arg.ClassDeclarationSyntax;
-            SemanticModel semanticModel = compilation.GetSemanticModel(classDeclaration.SyntaxTree);
-            ISymbol? classSymbol =
-                semanticModel.GetDeclaredSymbol(classDeclaration);
-
-            bool makeNullableEnabled = compilation.Options.NullableContextOptions == NullableContextOptions.Enable;
-
-            string namespaceName = classSymbol!.ContainingNamespace.ToDisplayString();
-            string className = classSymbol.Name;
-
-            if (classSymbol is ITypeSymbol ts)
-            {
-                ImmutableArray<INamedTypeSymbol> implementedInterfaces = ts.AllInterfaces;
-
-                var location = arg.ClassDeclarationSyntax.GetLocation();
-                string body = this.CreateBodyClassBody(context, location, arg.ClassDeclarationSyntax,
-                    implementedInterfaces, compilation, nullObjectTypeInfoHandler);
-
-                string code = $$"""
-                                using System;
-                                using System.CodeDom.Compiler;
-                                using System.Runtime.CompilerServices;
-                                using System.Threading.Tasks;
-
-                                #nullable {{(makeNullableEnabled ? "enable" : "disable")}}
-
-                                namespace {{namespaceName}};
-
-                                [CompilerGenerated]
-                                [GeneratedCode("ShadowWriter", "{{version}}")]
-                                public sealed partial class {{className}}
-                                {
-                                  private {{className}}()
-                                  {}
-
-                                  public static {{classSymbol}} Instance { get; } = new {{className}}();
-
-                                {{body.TrimEnd()}}
-                                }
-                                """;
-
-                string cleanNamespace = namespaceName.Replace(".", "");
-                context.AddSource($"{cleanNamespace}{className}.g.cs", SourceText.From(code, Encoding.UTF8));
-            }
-        }
+        generateNullObjectInPartialClass.Execute(context,
+            args.Where(a => a.NullObjectAttributeFound).Select(a => a.ClassDeclarationSyntax));
     }
 
     /// <summary>
@@ -216,21 +171,24 @@ namespace {Namespace}
 
             bool makeNullableEnabled = compilation.Options.NullableContextOptions == NullableContextOptions.Enable;
 
-            string body = this.CreateBody(context, semanticModel, compilation, interfaceDeclaration,
+            string body = this.CreateBody(semanticModel, interfaceDeclaration,
                 nullObjectTypeInfoHandler);
 
             string code = $$"""
                             using System;
+                            using System.Linq;
                             using System.Threading.Tasks;
                             using System.CodeDom.Compiler;
                             using System.Runtime.CompilerServices;
+
+                            // Generated by {{nameof(GenerateFullClassForInterface)}}
 
                             #nullable {{(makeNullableEnabled ? "enable" : "disable")}}
 
                             namespace {{namespaceName}};
 
                             [CompilerGenerated]
-                            [GeneratedCode("ShadowWriter", "{{version}}")]
+                            [GeneratedCode("ShadowWriter", "{{this.version}}")]
                             public sealed partial class {{className}} : {{interfaceName}}
                             {
                               private {{className}}()
@@ -248,148 +206,8 @@ namespace {Namespace}
         }
     }
 
-    private string CreateBodyClassBody(SourceProductionContext context,
-        Location location,
-        ClassDeclarationSyntax classDeclarationSyntax,
-        ImmutableArray<INamedTypeSymbol> implementedInterfaces,
-        Compilation compilation, NullObjectTypeInfoHandler nullObjectTypeInfo)
-    {
-        IndentedStringBuilder codeBuilder = new("  ", 1);
 
-        foreach (INamedTypeSymbol namedTypeSymbol in implementedInterfaces)
-        {
-            foreach (ISymbol member in namedTypeSymbol.GetMembers())
-            {
-                if (member is IPropertySymbol propertySymbol)
-                {
-                    if (propertySymbol.GetMethod is not null)
-                    {
-                        var typeInfo = nullObjectTypeInfo.GetTypeInfo(propertySymbol.Type);
-
-                        if (!typeInfo.Supported)
-                        {
-                            // TODO check return Type
-
-                            var ps = classDeclarationSyntax.Members.OfType<PropertyDeclarationSyntax>()
-                                .FirstOrDefault(ps => ps.Identifier.ValueText == propertySymbol.Name);
-
-                            if (ps is null)
-                            {
-                                var unsupportedType = Diagnostic.Create(
-                                    this.unsupportedReturnTypeDescriptor,
-                                    location,
-                                    propertySymbol.Type.Name);
-
-                                context.ReportDiagnostic(unsupportedType);
-                            }
-
-
-                            continue;
-                        }
-
-
-                        if (propertySymbol.SetMethod is null)
-                        {
-                            // Get only
-                            codeBuilder.AppendLine(
-                                $"public {propertySymbol.Type.ToDisplayString()} {propertySymbol.Name} => {typeInfo.ReturnValue};");
-                        }
-                        else
-                        {
-                            // Get and Set
-                            codeBuilder.AppendLine(
-                                $"public {propertySymbol.Type.ToDisplayString()} {propertySymbol.Name}");
-                            codeBuilder.AppendLine("{");
-                            codeBuilder.AppendLine($"get => {typeInfo.ReturnValue};");
-                            codeBuilder.AppendLine("set => _ = value;");
-                            codeBuilder.AppendLine("}");
-                        }
-                    }
-                }
-                else if (member is IMethodSymbol ms)
-                {
-                    if (ms.MethodKind == MethodKind.PropertyGet || ms.MethodKind == MethodKind.PropertySet)
-                    {
-                        continue;
-                    }
-
-                    List<string> parameters = GeneratorParameterList(ms);
-
-                    codeBuilder.AppendLine($"// {ms.Name}");
-
-                    string methodReturn = GenerateMethodReturn(nullObjectTypeInfo, ms);
-
-                    bool isUnsupported = string.IsNullOrWhiteSpace(methodReturn);
-                    if (isUnsupported)
-                    {
-                        // var semanticModel = compilation.GetSemanticModel(classDeclarationSyntax.SyntaxTree);
-
-                        bool methodAlreadyImplemented = false;
-
-                        var implementedMethods = classDeclarationSyntax.Members.OfType<MethodDeclarationSyntax>()
-                            .Where(x => x.Identifier.ValueText == ms.Name).ToList();
-
-                        if (implementedMethods.Count > 0)
-                        {
-                            foreach (var implementedMethod in implementedMethods)
-                            {
-                                if (ms.Parameters.Length != implementedMethod.ParameterList.Parameters.Count) continue;
-
-                                // TODO check parameters for correct Type
-
-                                var sm = compilation.GetSemanticModel(implementedMethod.SyntaxTree);
-                                var si = sm.GetSymbolInfo(implementedMethod.ReturnType).Symbol as ITypeSymbol;
-
-                                var isEqual = SymbolEqualityComparer.Default.Equals(si, ms.ReturnType);
-
-                                if (isEqual)
-                                {
-                                    methodAlreadyImplemented = true;
-                                    break;
-                                }
-                            }
-                        }
-
-                        if (!methodAlreadyImplemented)
-                        {
-                            var unsupportedType = Diagnostic.Create(
-                                this.unsupportedReturnTypeDescriptor,
-                                location,
-                                ms.ReturnType.Name);
-
-                            context.ReportDiagnostic(unsupportedType);
-                        }
-
-                        continue;
-                    }
-
-                    codeBuilder.Append("public ");
-
-
-                    codeBuilder.Append(ms.ReturnType.ToDisplayString());
-                    codeBuilder.Append(" ");
-                    codeBuilder.Append(member.Name);
-                    codeBuilder.Append("(");
-                    codeBuilder.Append(string.Join(", ", parameters));
-                    codeBuilder.Append(")");
-
-                    if (!string.IsNullOrWhiteSpace(methodReturn))
-                    {
-                        codeBuilder.AppendLine();
-                        codeBuilder.AppendLine(methodReturn);
-                    }
-                    else
-                    {
-                        codeBuilder.AppendLine(";");
-                    }
-                }
-            }
-        }
-
-        return codeBuilder.ToString();
-    }
-
-    private string CreateBody(SourceProductionContext context, SemanticModel semanticModel, Compilation compilation,
+    private string CreateBody(SemanticModel semanticModel,
         InterfaceDeclarationSyntax interfaceDeclaration, NullObjectTypeInfoHandler nullObjectTypeInfoHandler)
     {
         IndentedStringBuilder sb = new("  ", 1);
@@ -402,7 +220,7 @@ namespace {Namespace}
             {
                 List<string> parameters = GeneratorParameterList(ms);
 
-                string result = GenerateMethodReturn(nullObjectTypeInfoHandler, ms);
+                string result = this.GenerateMethodReturn(nullObjectTypeInfoHandler, ms);
 
                 if (string.IsNullOrWhiteSpace(result))
                 {
@@ -479,8 +297,6 @@ namespace {Namespace}
                          }
                          """;
             }
-
-
         }
 
         return string.Empty;

@@ -28,6 +28,10 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>all</IncludeAssets>
         </PackageReference>
+        <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
     </ItemGroup>
 
     <ItemGroup>
@@ -35,5 +39,10 @@
         <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false"/>
         <None Include="ShadowWriter.props" Pack="true" PackagePath="build"/>
         <None Include="ShadowWriter.targets" Pack="true" PackagePath="build"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="CodeMetricsConfig.txt" />
+      <AdditionalFiles Include="CodeMetricsConfig.txt" />
     </ItemGroup>
 </Project>
