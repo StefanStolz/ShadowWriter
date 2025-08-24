@@ -64,6 +64,7 @@ public class InterfaceNullObjectGeneratorTests
     private const string InputWithMultipleMembers =
         """
         using System;
+        using System.Linq;
         using System.Collections.Generic;
         using System.Threading.Tasks;
 
@@ -93,7 +94,7 @@ public class InterfaceNullObjectGeneratorTests
 
         public System.Collections.Generic.IEnumerable<string> GetItems()
         {
-           yield break;
+           return Enumerable.Empty<string>();
         }
 
 
@@ -138,6 +139,7 @@ public class InterfaceNullObjectGeneratorTests
     {
         var input = """
                     using System;
+                    using System.Linq;
                     using System.Collections.Generic;
                     using System.Threading.Tasks;
 
