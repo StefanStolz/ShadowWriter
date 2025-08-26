@@ -2,6 +2,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using RoslynVerifier;
 
 namespace ShadowWriter.Tests;
 
@@ -32,6 +34,7 @@ public class BuilderGeneratorTests
 
         var runResult = driver.RunGenerators(compilation).GetRunResult();
 
+        // TODO Idee - den Verifier direct über eine Extension-Methode aus den Generatedtrees holen
         var generated =
             runResult.GeneratedTrees.Single(x => x.FilePath.Contains("TheRecord") && x.FilePath.Contains("Builder"));
 
@@ -39,32 +42,42 @@ public class BuilderGeneratorTests
 
         await TestContext.Out.WriteLineAsync(code);
 
-        Assert.That(code, Is.EqualTo("""
-                                     using System;
-                                     using System.Threading.Tasks;
-                                     using System.CodeDom.Compiler;
-                                     using System.Runtime.CompilerServices;
+        var root = await generated.GetRootAsync();
+        var generatedRecord = root.DescendantNodes().OfType<RecordDeclarationSyntax>().Single();
+        var recordVerifier = Verifier.From(generatedRecord);
+        recordVerifier.ShouldHaveName("TheRecord");
+        recordVerifier.ShouldHaveInnerClass("Builder")
+            .ShouldHaveProperty("Value");
 
-                                     #nullable disable
+        // TODO  Microsoft.CodeAnalysis.Testing anschauen bzw. Microsoft.CodeAnalysis.CSharp.Testing anschauen
 
-                                     namespace TestNamespace;
 
-                                     [CompilerGenerated]
-                                     [GeneratedCode("ShadowWriter", "0.0.25.0")]
-                                     public partial record TheRecord
-                                     {
-                                         public sealed class Builder
-                                     {
-                                           // Parameter: Value: string
-                                       public string Value { get; set; } = "";
-                                       public TheRecord Build()
-                                       {
-                                         return new(this.Value    );
-                                       }
-
-                                     }
-                                     }
-                                     """).IgnoreWhiteSpace);
+//         Assert.That(code, Is.EqualTo("""
+//                                      using System;
+//                                      using System.Threading.Tasks;
+//                                      using System.CodeDom.Compiler;
+//                                      using System.Runtime.CompilerServices;
+//
+//                                      #nullable disable
+//
+//                                      namespace TestNamespace;
+//
+//                                      [CompilerGenerated]
+//                                      [GeneratedCode("ShadowWriter", "0.0.25.0")]
+//                                      public partial record TheRecord
+//                                      {
+//                                          public sealed class Builder
+//                                      {
+//                                            // Parameter: Value: string
+//                                        public string Value { get; set; } = "";
+//                                        public TheRecord Build()
+//                                        {
+//                                          return new(this.Value    );
+//                                        }
+//
+//                                      }
+//                                      }
+//                                      """).IgnoreWhiteSpace);
     }
 
     [Test]
@@ -100,6 +113,11 @@ public class BuilderGeneratorTests
         var code = (await generated.GetTextAsync()).ToString();
 
         await TestContext.Out.WriteLineAsync(code);
+
+        var verifier = Verifier.From((await generated.GetRootAsync()).DescendantNodes().OfType<RecordDeclarationSyntax>().Single());
+
+        verifier.ShouldHaveName("TheRecord");
+        verifier.ShouldHaveInnerClass("Builder");
 
         Assert.That(code, Is.EqualTo("""
                                      using System;

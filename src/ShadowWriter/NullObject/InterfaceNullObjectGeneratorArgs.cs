@@ -1,7 +1,6 @@
-using System;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace ShadowWriter;
+namespace ShadowWriter.NullObject;
 
 public record InterfaceNullObjectGeneratorArgs(
     bool NullObjectAttributeFound,

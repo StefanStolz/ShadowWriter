@@ -29,15 +29,14 @@ public sealed class ProjectInfoGenerator : IIncrementalGenerator
             {
                 x.GlobalOptions.TryGetValue("build_property.MSBuildProjectFullPath", out var fullPath);
                 x.GlobalOptions.TryGetValue("build_property.MSBuildProjectName", out var name);
-                x.GlobalOptions.TryGetValue("build_property.OutDir", out var outdir);
+                x.GlobalOptions.TryGetValue("build_property.OutDir", out var outDir);
                 x.GlobalOptions.TryGetValue("build_property.Version", out var version);
                 x.GlobalOptions.TryGetValue("build_property.RootNamespace", out var rootNamespace);
-
 
                 return new ProjectInfo(
                     fullPath ?? "",
                     name ?? "",
-                    outdir ?? "",
+                    outDir ?? "",
                     version ?? "",
                     rootNamespace ?? "" );
             });
