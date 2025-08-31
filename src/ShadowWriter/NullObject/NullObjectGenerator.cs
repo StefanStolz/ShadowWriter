@@ -142,6 +142,8 @@ namespace {Namespace}
 
         foreach (InterfaceNullObjectGeneratorArgs? arg in args)
         {
+            context.CancellationToken.ThrowIfCancellationRequested();
+
             InterfaceDeclarationSyntax interfaceDeclaration = arg.InterfaceDeclarationSyntax;
             SemanticModel semanticModel = compilation.GetSemanticModel(interfaceDeclaration.SyntaxTree);
             if (semanticModel.GetDeclaredSymbol(interfaceDeclaration) is not INamedTypeSymbol interfaceSymbol)

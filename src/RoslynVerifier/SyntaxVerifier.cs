@@ -2,7 +2,7 @@
 
 namespace RoslynVerifier
 {
-    public static class Verifier
+    public static class SyntaxVerifier
     {
         public static TypeVerifier From(TypeDeclarationSyntax typeDeclarationSyntax)
         {

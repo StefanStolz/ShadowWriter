@@ -170,7 +170,7 @@ public class InterfaceNullObjectGeneratorTests
         var root = await syntaxTree.GetRootAsync();
         var clazz = root.DescendantNodes().OfType<ClassDeclarationSyntax>().Single();
 
-        var verifier = Verifier.From(clazz);
+        var verifier = SyntaxVerifier.From(clazz);
 
         verifier.ShouldHaveName("NullSut");
         verifier.ShouldHaveMethod("Method").WithReturnType("int");
@@ -212,7 +212,7 @@ public class InterfaceNullObjectGeneratorTests
         var root = await syntaxTree.GetRootAsync();
         var clazz = root.DescendantNodes().OfType<ClassDeclarationSyntax>().Single();
 
-        var verifier = Verifier.From(clazz);
+        var verifier = SyntaxVerifier.From(clazz);
         verifier.ShouldHaveName("NullSut");
         verifier.ShouldHaveMethod("Method")
             .WithReturnType("System.Threading.Tasks.Task");
@@ -254,7 +254,7 @@ public class InterfaceNullObjectGeneratorTests
         var root = await syntaxTree.GetRootAsync();
         var clazz = root.DescendantNodes().OfType<ClassDeclarationSyntax>().Single();
 
-        var verifier = Verifier.From(clazz);
+        var verifier = SyntaxVerifier.From(clazz);
         verifier.ShouldHaveName("NullSut");
         verifier.ShouldHaveMethod("Method")
             .WithReturnType("System.Threading.Tasks.ValueTask");
@@ -298,7 +298,7 @@ public class InterfaceNullObjectGeneratorTests
 
         var clazz = root.DescendantNodes().OfType<ClassDeclarationSyntax>().Single();
 
-        var verifier = Verifier.From(clazz);
+        var verifier = SyntaxVerifier.From(clazz);
         verifier.ShouldHaveName("abcd");
         verifier.ShouldHaveMethod("Method")
             .WithReturnType("System.Threading.Tasks.ValueTask");

@@ -44,40 +44,15 @@ public class BuilderGeneratorTests
 
         var root = await generated.GetRootAsync();
         var generatedRecord = root.DescendantNodes().OfType<RecordDeclarationSyntax>().Single();
-        var recordVerifier = Verifier.From(generatedRecord);
+        var recordVerifier = SyntaxVerifier.From(generatedRecord);
         recordVerifier.ShouldHaveName("TheRecord");
-        recordVerifier.ShouldHaveInnerClass("Builder")
-            .ShouldHaveProperty("Value");
+        var builderClass = recordVerifier.ShouldHaveInnerClass("Builder");
+        builderClass.ShouldHaveProperty("Value");
+        builderClass.ShouldHaveMethod("Build").WithReturnType("TheRecord");
+
 
         // TODO  Microsoft.CodeAnalysis.Testing anschauen bzw. Microsoft.CodeAnalysis.CSharp.Testing anschauen
 
-
-//         Assert.That(code, Is.EqualTo("""
-//                                      using System;
-//                                      using System.Threading.Tasks;
-//                                      using System.CodeDom.Compiler;
-//                                      using System.Runtime.CompilerServices;
-//
-//                                      #nullable disable
-//
-//                                      namespace TestNamespace;
-//
-//                                      [CompilerGenerated]
-//                                      [GeneratedCode("ShadowWriter", "0.0.25.0")]
-//                                      public partial record TheRecord
-//                                      {
-//                                          public sealed class Builder
-//                                      {
-//                                            // Parameter: Value: string
-//                                        public string Value { get; set; } = "";
-//                                        public TheRecord Build()
-//                                        {
-//                                          return new(this.Value    );
-//                                        }
-//
-//                                      }
-//                                      }
-//                                      """).IgnoreWhiteSpace);
     }
 
     [Test]
@@ -114,7 +89,8 @@ public class BuilderGeneratorTests
 
         await TestContext.Out.WriteLineAsync(code);
 
-        var verifier = Verifier.From((await generated.GetRootAsync()).DescendantNodes().OfType<RecordDeclarationSyntax>().Single());
+        var verifier = SyntaxVerifier.From((await generated.GetRootAsync()).DescendantNodes()
+            .OfType<RecordDeclarationSyntax>().Single());
 
         verifier.ShouldHaveName("TheRecord");
         verifier.ShouldHaveInnerClass("Builder");

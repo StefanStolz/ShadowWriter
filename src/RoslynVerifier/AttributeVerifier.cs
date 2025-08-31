@@ -37,7 +37,19 @@ public sealed class AttributeVerifier
                 var x = arg.ToFullString().Trim('"');
                 var y = expected.ToString();
 
-                if (!x.Equals(y)) return false;
+                switch (expected)
+                {
+                    case bool b:
+                    {
+                        if (!bool.TryParse(x, out var result)) return false;
+
+                        if (result != b) return false;
+                        break;
+                    }
+                    default:
+                        if (!x.Equals(y)) return false;
+                        break;
+                }
             }
 
             return true;

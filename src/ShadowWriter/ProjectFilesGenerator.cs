@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 
@@ -53,7 +54,7 @@ public sealed class ProjectFilesGenerator : IIncrementalGenerator
 
         if (!encodedFileInfos.Generate) return;
 
-        var body = CreateBody(encodedFileInfos);
+        var body = CreateBody(encodedFileInfos, context.CancellationToken);
 
         var hasRef = compilation.ReferencedAssemblyNames.Any(ra => ra.Name.StartsWith("ShadowKit.IO", StringComparison.Ordinal));
 
@@ -120,14 +121,14 @@ public sealed class ProjectFilesGenerator : IIncrementalGenerator
         context.AddSource("ShadowWriter.EmbeddedResources.g.cs", SourceText.From(code, Encoding.UTF8));
     }
 
-    private string CreateBody(EncodedFileInfos encodedFileInfos)
+    private string CreateBody(EncodedFileInfos encodedFileInfos, CancellationToken cancellationToken)
     {
         var files = encodedFileInfos.AllEmbeddedResources.Split(['|'], StringSplitOptions.RemoveEmptyEntries);
 
         var builder = new IndentedStringBuilder("  ", 1);
         var buildOutputModel = new BuildEmbeddedResourceOutputModel(encodedFileInfos.RootNamespace);
 
-        var outputModel = buildOutputModel.GeneratedClasses(files);
+        var outputModel = buildOutputModel.GeneratedClasses(files, cancellationToken);
 
         WriteEmbeddedClassInfo(outputModel.InnerClasses);
 
@@ -176,13 +177,16 @@ internal sealed class BuildEmbeddedResourceOutputModel
         this.rootNamespace = rootNamespace;
     }
 
-    public EmbeddedResourceClassInfo GeneratedClasses(IEnumerable<string> files)
+    public EmbeddedResourceClassInfo GeneratedClasses(IEnumerable<string> files,
+        CancellationToken cancellationToken = default)
     {
         var result = new EmbeddedResourceClassInfo.Builder();
         result.Name = "EmbeddedResources";
 
         foreach (var file in files)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             IList<EmbeddedResourceClassInfo.Builder> current = result.InnerClasses;
             var dir = Path.GetDirectoryName(file) ?? "";
 

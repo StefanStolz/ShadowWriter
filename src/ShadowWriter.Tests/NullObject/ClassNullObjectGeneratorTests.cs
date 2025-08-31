@@ -100,7 +100,7 @@ public class ClassNullObjectGeneratorTests
         var root = await generated.GetRootAsync();
         var generatedClass = root.DescendantNodes().OfType<ClassDeclarationSyntax>().Single();
 
-        var verifier = Verifier.From(generatedClass);
+        var verifier = SyntaxVerifier.From(generatedClass);
 
 
         var code = (await generated.GetTextAsync()).ToString();
@@ -247,7 +247,7 @@ public class ClassNullObjectGeneratorTests
 
         var generatedClass = root.DescendantNodes().OfType<ClassDeclarationSyntax>().Single();
 
-        var verifier = Verifier.From(generatedClass);
+        var verifier = SyntaxVerifier.From(generatedClass);
         verifier.ShouldHaveName("NullHaveProperties");
         verifier.ShouldHaveStaticProperty("Instance").WithType("TestNamespace.NullHaveProperties");
     }

@@ -2,7 +2,7 @@ using System;
 
 namespace RoslynVerifier;
 
-public class VerifierException : Exception
+public sealed class VerifierException : Exception
 {
     public VerifierException(string message)
         : base(message)
