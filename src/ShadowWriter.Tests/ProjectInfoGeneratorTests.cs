@@ -34,20 +34,17 @@ public class ProjectInfoGeneratorTests
 
         var configOptionsProvider = new FakeAnalyzerConfigOptionsProvider(configOptions);
 
-
         var driver = CSharpGeneratorDriver.Create(sut).WithUpdatedAnalyzerConfigOptions(configOptionsProvider);
 
         var options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
 
         var compilation = CSharpCompilation.Create(nameof(ProjectInfoGeneratorTests), options: options);
 
-
         var runResult = driver
             .RunGeneratorsAndUpdateCompilation(compilation, out Compilation outputCompilation,
                 out ImmutableArray<Diagnostic> array).GetRunResult();
 
         runResult.Diagnostics.ShouldBeEmpty();
-
 
         var generated = runResult.GeneratedTrees.Single();
 
@@ -57,7 +54,7 @@ public class ProjectInfoGeneratorTests
         verifier.ShouldHaveName("TheProject");
     }
 
-    private class FakeAnalyzerConfigOptionsProvider : AnalyzerConfigOptionsProvider
+    private sealed class FakeAnalyzerConfigOptionsProvider : AnalyzerConfigOptionsProvider
     {
         private readonly AnalyzerConfigOptions globalOptions;
 
@@ -73,11 +70,11 @@ public class ProjectInfoGeneratorTests
         public override AnalyzerConfigOptions GetOptions(AdditionalText textFile) => this.globalOptions;
     }
 
-    private class FakeAnalyzerConfigOptions : AnalyzerConfigOptions
+    private sealed class FakeAnalyzerConfigOptions : AnalyzerConfigOptions
     {
         private readonly Dictionary<string, string> options;
 
-        public FakeAnalyzerConfigOptions(Dictionary<string, string> options)
+        public FakeAnalyzerConfigOptions(Dictionary<string, string>? options)
         {
             this.options = options ?? new Dictionary<string, string>();
         }

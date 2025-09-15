@@ -7,6 +7,7 @@
         <Nullable>enable</Nullable>
         <RootNamespace>ShadowWriter.Sample</RootNamespace>
         <ShadowWriter_EnableEmbeddedResources>false</ShadowWriter_EnableEmbeddedResources>
+<!--        <LangVersion>7.3</LangVersion>-->
     </PropertyGroup>
 
     <ItemGroup>

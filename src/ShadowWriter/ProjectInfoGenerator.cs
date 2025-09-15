@@ -54,19 +54,19 @@ public sealed class ProjectInfoGenerator : IIncrementalGenerator
               using System.CodeDom.Compiler;
               using System.Runtime.CompilerServices;
 
-              namespace {{Namespace}};
-
-              [CompilerGenerated]
-              [GeneratedCode("ShadowWriter", "{{this.generatorAssemblyVersion}}")]
-              internal static class TheProject
-              {
-                public static string FullPath => @"{{projectInfo.FullPath}}";
-                public static string ProjectDirectory => @"{{Path.GetDirectoryName(projectInfo.FullPath)}}";
-                public static string Name => @"{{projectInfo.Name}}";
-                public static string OutDir => @"{{Path.GetFullPath(projectInfo.OutDir)}}";
-                public static string Version => @"{{projectInfo.Version}}";
-                public static string RootNamespace => @"{{projectInfo.RootNamespace}}";
-                public static DateTimeOffset BuildTimeUtc => new DateTimeOffset({{now.Ticks}}, TimeSpan.Zero);
+              namespace {{Namespace}} {
+                [CompilerGenerated]
+                [GeneratedCode("ShadowWriter", "{{this.generatorAssemblyVersion}}")]
+                internal static class TheProject
+                {
+                    public static string FullPath => @"{{projectInfo.FullPath}}";
+                    public static string ProjectDirectory => @"{{Path.GetDirectoryName(projectInfo.FullPath)}}";
+                    public static string Name => @"{{projectInfo.Name}}";
+                    public static string OutDir => @"{{Path.GetFullPath(projectInfo.OutDir)}}";
+                    public static string Version => @"{{projectInfo.Version}}";
+                    public static string RootNamespace => @"{{projectInfo.RootNamespace}}";
+                    public static DateTimeOffset BuildTimeUtc => new DateTimeOffset({{now.Ticks}}, TimeSpan.Zero);
+                }
               }
               """;
 

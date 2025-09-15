@@ -27,6 +27,7 @@ public static class StaticRun
         //     Console.WriteLine($"  {name}");
         // }
 
+        var xxx = TheProject.BuildTimeUtc.Date.ToBinary();
 
         var i = NullHaveProperties.Instance;
 
