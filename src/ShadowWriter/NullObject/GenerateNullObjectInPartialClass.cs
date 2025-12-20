@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 
@@ -32,7 +33,7 @@ public sealed class GenerateNullObjectInPartialClass
         {
             SemanticModel semanticModel = compilation.GetSemanticModel(classDeclaration.SyntaxTree);
             ISymbol? classSymbol =
-                semanticModel.GetDeclaredSymbol(classDeclaration);
+                ModelExtensions.GetDeclaredSymbol(semanticModel, classDeclaration);
 
             if (classSymbol is not ITypeSymbol typeSymbol)
             {
@@ -50,6 +51,8 @@ public sealed class GenerateNullObjectInPartialClass
             string body = this.CreateBodyClassBody(context, location, classDeclaration,
                 implementedInterfaces);
 
+            string modifiers = BuildModifiersForResultingClass(classDeclaration);
+
             string code = $$"""
                             using System;
                             using System.Linq;
@@ -65,7 +68,7 @@ public sealed class GenerateNullObjectInPartialClass
 
                             [CompilerGenerated]
                             [GeneratedCode("ShadowWriter", "{{this.version}}")]
-                            public sealed partial class {{className}}
+                            {{modifiers}} partial class {{className}}
                             {
                               private {{className}}()
                               {}
@@ -79,6 +82,14 @@ public sealed class GenerateNullObjectInPartialClass
             string cleanNamespace = namespaceName.Replace(".", "");
             context.AddSource($"{cleanNamespace}{className}.g.cs", SourceText.From(code, Encoding.UTF8));
         }
+    }
+
+    private static string BuildModifiersForResultingClass(ClassDeclarationSyntax classDeclarationSyntax)
+    {
+        var withoutPartial =
+            classDeclarationSyntax.Modifiers.Where(m => !m.IsKind(SyntaxKind.PartialKeyword)).ToArray();
+
+        return string.Join(" ", withoutPartial.Select(m => m.Text));
     }
 
     private string CreateBodyClassBody(SourceProductionContext context,

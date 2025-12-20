@@ -23,7 +23,7 @@ public class ClassNullObjectGeneratorTests
                     namespace TestNamespace;
 
                     [ShadowWriter.NullObject]
-                    public partial class NullShibby : IDisposable {
+                    internal partial class NullShibby : IDisposable {
 
                     }
                     """;
@@ -44,18 +44,17 @@ public class ClassNullObjectGeneratorTests
 
         var code = (await generated.GetTextAsync()).ToString();
 
-
         var syntaxTree = CSharpSyntaxTree.ParseText(code);
         var root = await syntaxTree.GetRootAsync();
         var clazz = root.DescendantNodes().OfType<ClassDeclarationSyntax>().Single();
 
         clazz.Identifier.Value.ShouldBe("NullShibby");
+        clazz.Modifiers.ToString().Trim().ShouldBe("internal partial");
 
         var method = clazz.Members.OfType<MethodDeclarationSyntax>().Single();
 
         method.Identifier.Value.ShouldBe("Dispose");
         var txt = method.ReturnType.GetText().ToString().Trim();
-
         txt.ShouldBe("void");
     }
 
