@@ -10,6 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       RAW_TAG: ${{ github.ref_name }}  # z. B. "v1.2.3"
+    permissions:
+      id-token: write  # enable GitHub OIDC token issuance for this job      
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -23,7 +25,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0.x'  # oder deine Version
+          dotnet-version: '10.0.x'  # oder deine Version
 
       - name: Restore dependencies
         run: dotnet restore ./src/ShadowWriter.sln 
@@ -37,5 +39,12 @@ jobs:
       - name: Pack
         run: dotnet pack ./src/ShadowWriter/ShadowWriter.csproj -o ./publish --no-restore /p:VERSIONPREFIX=$VERSIONPREFIX
 
+      - name: NuGet login (OIDC → temp API key)
+        uses: NuGet/login@v1
+        id: login
+        with:
+          # Recommended: use a secret like ${{ secrets.NUGET_USER }} for your nuget.org username (profile name), NOT your email address
+          user: StefanStolz
+
       - name: Push to NuGet
-        run: dotnet nuget push ./publish/*.nupkg --api-key ${{ secrets.NUGETAPIKEY }} --source https://api.nuget.org/v3/index.json
+        run: dotnet nuget push ./publish/*.nupkg --api-key ${{ steps.login.outputs.NUGET_API_KEY  }} --source https://api.nuget.org/v3/index.json
