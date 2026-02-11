@@ -16,13 +16,15 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '9.0.x'  
+        dotnet-version: '10.0.x'  
 
     - name: Restore dependencies
       run: dotnet restore ./src/ShadowWriter.sln 
 
     - name: Set version variable
-      run: echo "VERSIONPREFIX=0.0.${{ github.run_number }}" >> $GITHUB_ENV
+      run: |
+        echo "VERSIONPREFIX=0.0.${{ github.run_number }}" >> $GITHUB_ENV
+        echo "VERSIONSUFFIX=ci-${{ github.sha }}" >> $GITHUB_ENV
 
     - name: Build
       run: dotnet build ./src/ShadowWriter.sln --configuration Release
