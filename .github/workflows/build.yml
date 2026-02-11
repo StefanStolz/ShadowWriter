@@ -24,7 +24,7 @@ jobs:
     - name: Set version variable
       run: |
         echo "VERSIONPREFIX=0.0.${{ github.run_number }}" >> $GITHUB_ENV
-        echo "VERSIONSUFFIX=ci-${{ github.sha }}" >> $GITHUB_ENV
+        echo "VERSIONSUFFIX=ci-dev" >> $GITHUB_ENV
 
     - name: Build
       run: dotnet build ./src/ShadowWriter.sln --configuration Release
@@ -35,8 +35,16 @@ jobs:
     - name: Pack
       run: dotnet pack ./src/ShadowWriter/ShadowWriter.csproj -o ./publish --no-restore /p:VERSIONPREFIX=$VERSIONPREFIX
 
-    # - name: Push to NuGet
-    #   run: dotnet nuget push ./publish/*.nupkg --api-key ${{ secrets.NUGETAPIKEY }} --source https://api.nuget.org/v3/index.json
+    - name: NuGet login (OIDC → temp API key)
+      uses: NuGet/login@v1
+      id: login
+      with:
+          # Recommended: use a secret like ${{ secrets.NUGET_USER }} for your nuget.org username (profile name), NOT your email address
+        user: StefanStolz
+
+      # Push the package
+    - name: Push to NuGet
+      run: dotnet nuget push artifacts/my-sdk.nupkg --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
 
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
