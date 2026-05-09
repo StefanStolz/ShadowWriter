@@ -1,7 +1,7 @@
 <Project>
   <PropertyGroup>
     <Authors>Stefan Stolz</Authors>
-    <Copyright>Copyright © Stefan Stolz, 2025</Copyright>
+    <Copyright>Copyright © Stefan Stolz, 2026</Copyright>
     <Description>Leverage the capabilities of Roslyn source generators to help generate boilerplate code efficiently.</Description>
 
     <RepositoryType>git</RepositoryType>
