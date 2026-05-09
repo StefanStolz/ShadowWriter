@@ -4,10 +4,12 @@ using Microsoft.CodeAnalysis.Text;
 
 namespace ShadowWriter.Tests.Utils;
 
-public class TestAdditionalFile : AdditionalText {
+public class TestAdditionalFile : AdditionalText
+{
     private readonly SourceText _text;
 
-    public TestAdditionalFile(string path, string text) {
+    public TestAdditionalFile(string path, string text)
+    {
         Path = path;
         _text = SourceText.From(text);
     }

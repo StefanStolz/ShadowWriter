@@ -11,24 +11,24 @@ public class BuildEmbeddedResourceOutputModelTests
     [Test]
     public void EmptyList()
     {
-       var sut = new  BuildEmbeddedResourceOutputModel("a");
+        var sut = new BuildEmbeddedResourceOutputModel("a");
 
-       var result = sut.GeneratedClasses([]);
+        var result = sut.GeneratedClasses([]);
 
-       result.InnerClasses.ShouldBeEmpty();
+        result.InnerClasses.ShouldBeEmpty();
     }
 
     [Test]
     public void SingleItem()
     {
-        var sut = new  BuildEmbeddedResourceOutputModel("a");
+        var sut = new BuildEmbeddedResourceOutputModel("a");
 
         var result = sut.GeneratedClasses(["res/Image1.jpg"]);
 
         result.InnerClasses.Count.ShouldBe(1);
         result.InnerClasses[0].Items.Count.ShouldBe(1);
 
-        var item  =result.InnerClasses[0].Items[0];
+        var item = result.InnerClasses[0].Items[0];
 
         item.PropertyName.ShouldBe("Image1Jpg");
         item.ManifestResourceName.ShouldBe("a.Res.Image1.jpg");
@@ -37,7 +37,7 @@ public class BuildEmbeddedResourceOutputModelTests
     [Test]
     public void SingleItemInRootFolder()
     {
-        var sut = new  BuildEmbeddedResourceOutputModel("a");
+        var sut = new BuildEmbeddedResourceOutputModel("a");
 
         var result = sut.GeneratedClasses(["Image1.jpg"]);
 
@@ -48,7 +48,7 @@ public class BuildEmbeddedResourceOutputModelTests
     [Test]
     public void TwoItemsInSameFolder()
     {
-        var sut = new  BuildEmbeddedResourceOutputModel("a");
+        var sut = new BuildEmbeddedResourceOutputModel("a");
 
         var result = sut.GeneratedClasses(["res/Image1.jpg", "res/Image2.jpg"]);
 
@@ -60,7 +60,7 @@ public class BuildEmbeddedResourceOutputModelTests
     [Test]
     public void MultipleItemsInDifferentFolders()
     {
-        var sut = new  BuildEmbeddedResourceOutputModel("a");
+        var sut = new BuildEmbeddedResourceOutputModel("a");
 
         var result = sut.GeneratedClasses(["res1/Image1.jpg", "res2/Image2.jpg", "res1/Image3.jpg", "res1/a/ImageX.jpg"]);
 

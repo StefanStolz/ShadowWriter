@@ -2,6 +2,7 @@ namespace ShadowWriter.Sample;
 
 [NullObject]
 [ClassName("abcd")]
-public interface IDifferentName {
+public interface IDifferentName
+{
 
 }

@@ -14,7 +14,7 @@ public interface IHaveProperties
     IEnumerable<string> AnEnumerable { get; }
     SomeStruct Struct { get; }
 
-   IDisposable Ab { get; }
+    IDisposable Ab { get; }
 }
 
 public readonly struct SomeStruct

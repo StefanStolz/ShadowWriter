@@ -1,5 +1,6 @@
 namespace ShadowWriter.Sample;
 
 [NullObject]
-public partial class ImplementingMyInterface : IMyInterface {
+public partial class ImplementingMyInterface : IMyInterface
+{
 }
