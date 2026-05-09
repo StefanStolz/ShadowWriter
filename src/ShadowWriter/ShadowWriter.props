@@ -8,6 +8,11 @@
     <CompilerVisibleProperty Include="VersionSuffix" />
     <CompilerVisibleProperty Include="RootNamespace" />
     <CompilerVisibleProperty Include="ShadowWriter_EnableEmbeddedResources" />
+    <CompilerVisibleProperty Include="ShadowWriter_EnableProjectInfo" />
+    <CompilerVisibleProperty Include="ShadowWriter_ProjectInfo_IncludePaths" />
+    <CompilerVisibleProperty Include="ShadowWriter_ProjectInfo_IncludeVersion" />
+    <CompilerVisibleProperty Include="ShadowWriter_ProjectInfo_IncludeBuildTime" />
+    <CompilerVisibleProperty Include="ShadowWriter_ProjectInfo_IncludeRootNamespace" />
    
     <CompilerVisibleProperty Include="AllEmbeddedResources" />
   </ItemGroup>

@@ -38,15 +38,58 @@ public sealed class ProjectInfoGenerator : IIncrementalGenerator
                     name ?? "",
                     outDir ?? "",
                     version ?? "",
-                    rootNamespace ?? "" );
+                    rootNamespace ?? "");
             });
 
-        context.RegisterSourceOutput(properties, this.GenerateCode);
+        var config = context.AnalyzerConfigOptionsProvider
+            .Select((x, _) =>
+            {
+                bool ParseFlag(string key, bool defaultValue = true)
+                {
+                    return x.GlobalOptions.TryGetValue(key, out var raw)
+                        && bool.TryParse(raw, out var parsed) ? parsed : defaultValue;
+                }
+
+                return new ProjectInfoConfig(
+                    EnableProjectInfo:    ParseFlag("build_property.ShadowWriter_EnableProjectInfo", false),
+                    IncludePaths:         ParseFlag("build_property.ShadowWriter_ProjectInfo_IncludePaths"),
+                    IncludeVersion:       ParseFlag("build_property.ShadowWriter_ProjectInfo_IncludeVersion"),
+                    IncludeBuildTime:     ParseFlag("build_property.ShadowWriter_ProjectInfo_IncludeBuildTime"),
+                    IncludeRootNamespace: ParseFlag("build_property.ShadowWriter_ProjectInfo_IncludeRootNamespace"));
+            });
+
+        context.RegisterSourceOutput(properties.Combine(config), this.GenerateCode);
     }
 
-    private void GenerateCode(SourceProductionContext context, ProjectInfo projectInfo)
+    private void GenerateCode(SourceProductionContext context,
+        (ProjectInfo ProjectInfo, ProjectInfoConfig Config) arg)
     {
-        var now = DateTimeOffset.UtcNow;
+        var (projectInfo, config) = arg;
+
+        if (!config.EnableProjectInfo) return;
+
+        var sb = new StringBuilder();
+
+        if (config.IncludePaths)
+        {
+            sb.AppendLine($"    public static string FullPath => @\"{projectInfo.FullPath}\";");
+            sb.AppendLine($"    public static string ProjectDirectory => @\"{Path.GetDirectoryName(projectInfo.FullPath)}\";");
+            sb.AppendLine($"    public static string OutDir => @\"{Path.GetFullPath(projectInfo.OutDir)}\";");
+        }
+
+        sb.AppendLine($"    public static string Name => @\"{projectInfo.Name}\";");
+
+        if (config.IncludeVersion)
+            sb.AppendLine($"    public static string Version => @\"{projectInfo.Version}\";");
+
+        if (config.IncludeRootNamespace)
+            sb.AppendLine($"    public static string RootNamespace => @\"{projectInfo.RootNamespace}\";");
+
+        if (config.IncludeBuildTime)
+        {
+            var now = DateTimeOffset.UtcNow;
+            sb.AppendLine($"    public static DateTimeOffset BuildTimeUtc => new DateTimeOffset({now.Ticks}L, TimeSpan.Zero);");
+        }
 
         var code =
             $$"""
@@ -59,14 +102,7 @@ public sealed class ProjectInfoGenerator : IIncrementalGenerator
                 [GeneratedCode("ShadowWriter", "{{this.generatorAssemblyVersion}}")]
                 internal static class TheProject
                 {
-                    public static string FullPath => @"{{projectInfo.FullPath}}";
-                    public static string ProjectDirectory => @"{{Path.GetDirectoryName(projectInfo.FullPath)}}";
-                    public static string Name => @"{{projectInfo.Name}}";
-                    public static string OutDir => @"{{Path.GetFullPath(projectInfo.OutDir)}}";
-                    public static string Version => @"{{projectInfo.Version}}";
-                    public static string RootNamespace => @"{{projectInfo.RootNamespace}}";
-                    public static DateTimeOffset BuildTimeUtc => new DateTimeOffset({{now.Ticks}}, TimeSpan.Zero);
-                }
+              {{sb}}    }
               }
               """;
 

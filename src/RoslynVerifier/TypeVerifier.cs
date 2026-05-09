@@ -76,4 +76,12 @@ public sealed class TypeVerifier
             .Where(p => p.Identifier.Text.Equals(propertyName, StringComparison.Ordinal)).ToArray();
         return new PropertyVerifier(properties);
     }
+
+    public void ShouldNotHaveProperty(string propertyName)
+    {
+        var match = this.typeDeclarationSyntax.Members.OfType<PropertyDeclarationSyntax>()
+            .Any(p => p.Identifier.Text.Equals(propertyName, StringComparison.Ordinal));
+        if (match)
+            throw new VerifierException($"Expected class NOT to have property '{propertyName}' but it was present");
+    }
 }
