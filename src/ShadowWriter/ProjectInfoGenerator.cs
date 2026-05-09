@@ -100,12 +100,12 @@ public sealed class ProjectInfoGenerator : IIncrementalGenerator
               namespace {{Namespace}} {
                 [CompilerGenerated]
                 [GeneratedCode("ShadowWriter", "{{this.generatorAssemblyVersion}}")]
-                internal static class TheProject
+                internal static class ProjectInfo
                 {
               {{sb}}    }
               }
               """;
 
-        context.AddSource("ShadowWriter.TheProject.g.cs", SourceText.From(code, Encoding.UTF8));
+        context.AddSource("ShadowWriter.ProjectInfo.g.cs", SourceText.From(code, Encoding.UTF8));
     }
 }

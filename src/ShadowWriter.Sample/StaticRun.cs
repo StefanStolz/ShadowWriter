@@ -29,6 +29,8 @@ public static class StaticRun
 
         var xxx = TheProject.BuildTimeUtc.Date.ToBinary();
 
+         xxx = ShadowWriter.ProjectInfo.BuildTimeUtc.Date.ToBinary();
+
         var i = NullHaveProperties.Instance;
 
         var builder = new WithBuilderMultiple.Builder();

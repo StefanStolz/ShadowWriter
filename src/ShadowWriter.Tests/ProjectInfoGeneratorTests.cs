@@ -21,6 +21,7 @@ public class ProjectInfoGeneratorTests
         { "build_property.OutDir", "C:\\Projects\\TestProject\\bin\\Debug\\" },
         { "build_property.Version", "1.0.0" },
         { "build_property.RootNamespace", "TestNamespace" },
+        { "build_property.ShadowWriter_EnableProjectInfo", "true" },
     };
 
     private static ImmutableArray<SyntaxTree> RunGenerator(Dictionary<string, string> options)
@@ -35,7 +36,7 @@ public class ProjectInfoGeneratorTests
             .GetRunResult().GeneratedTrees;
     }
 
-    private static TypeVerifier GetTheProjectVerifier(Dictionary<string, string> options)
+    private static TypeVerifier GetProjectInfoVerifier(Dictionary<string, string> options)
     {
         var trees = RunGenerator(options);
         var generated = trees.Single();
@@ -46,8 +47,8 @@ public class ProjectInfoGeneratorTests
     [Test]
     public void CreateProjectInfo()
     {
-        var verifier = GetTheProjectVerifier(new Dictionary<string, string>(BaseOptions));
-        verifier.ShouldHaveName("TheProject");
+        var verifier = GetProjectInfoVerifier(new Dictionary<string, string>(BaseOptions));
+        verifier.ShouldHaveName("ProjectInfo");
     }
 
     [Test]
@@ -55,7 +56,7 @@ public class ProjectInfoGeneratorTests
     {
         var options = new Dictionary<string, string>(BaseOptions)
         {
-            { "build_property.ShadowWriter_EnableProjectInfo", "false" }
+            ["build_property.ShadowWriter_EnableProjectInfo"] = "false"
         };
 
         var trees = RunGenerator(options);
@@ -63,21 +64,9 @@ public class ProjectInfoGeneratorTests
     }
 
     [Test]
-    public void MasterSwitchTrueGeneratesProjectInfo()
-    {
-        var options = new Dictionary<string, string>(BaseOptions)
-        {
-            { "build_property.ShadowWriter_EnableProjectInfo", "true" }
-        };
-
-        var verifier = GetTheProjectVerifier(options);
-        verifier.ShouldHaveName("TheProject");
-    }
-
-    [Test]
     public void DefaultFlagsGenerateAllProperties()
     {
-        var verifier = GetTheProjectVerifier(new Dictionary<string, string>(BaseOptions));
+        var verifier = GetProjectInfoVerifier(new Dictionary<string, string>(BaseOptions));
         verifier.ShouldHaveStaticProperty("FullPath");
         verifier.ShouldHaveStaticProperty("Name");
         verifier.ShouldHaveStaticProperty("Version");
@@ -93,7 +82,7 @@ public class ProjectInfoGeneratorTests
             { "build_property.ShadowWriter_ProjectInfo_IncludePaths", "false" }
         };
 
-        var verifier = GetTheProjectVerifier(options);
+        var verifier = GetProjectInfoVerifier(options);
         verifier.ShouldNotHaveProperty("FullPath");
         verifier.ShouldNotHaveProperty("ProjectDirectory");
         verifier.ShouldNotHaveProperty("OutDir");
@@ -108,7 +97,7 @@ public class ProjectInfoGeneratorTests
             { "build_property.ShadowWriter_ProjectInfo_IncludeVersion", "false" }
         };
 
-        var verifier = GetTheProjectVerifier(options);
+        var verifier = GetProjectInfoVerifier(options);
         verifier.ShouldNotHaveProperty("Version");
         verifier.ShouldHaveStaticProperty("Name");
     }
@@ -121,7 +110,7 @@ public class ProjectInfoGeneratorTests
             { "build_property.ShadowWriter_ProjectInfo_IncludeBuildTime", "false" }
         };
 
-        var verifier = GetTheProjectVerifier(options);
+        var verifier = GetProjectInfoVerifier(options);
         verifier.ShouldNotHaveProperty("BuildTimeUtc");
         verifier.ShouldHaveStaticProperty("Name");
     }
@@ -134,7 +123,7 @@ public class ProjectInfoGeneratorTests
             { "build_property.ShadowWriter_ProjectInfo_IncludeRootNamespace", "false" }
         };
 
-        var verifier = GetTheProjectVerifier(options);
+        var verifier = GetProjectInfoVerifier(options);
         verifier.ShouldNotHaveProperty("RootNamespace");
         verifier.ShouldHaveStaticProperty("Name");
     }
