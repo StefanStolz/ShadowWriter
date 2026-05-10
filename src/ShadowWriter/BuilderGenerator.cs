@@ -134,30 +134,38 @@ public sealed class BuilderGenerator : IIncrementalGenerator
 
             foreach (var parameter in primaryCtor.Parameters)
             {
-                string required = string.Empty;
-                string propertyInitializer = string.Empty;
-                if (makeNullableEnabled && parameter.Type.IsReferenceType)
-                {
-                    required = "required ";
-                }
-
-                if (parameter.Type.SpecialType == SpecialType.System_String)
-                {
-                    required = String.Empty;
-                    propertyInitializer = " = \"\";";
-                }
+                string typeString = $"{parameter.Type}";
+                bool alreadyNullable = typeString.EndsWith("?");
+                bool isRefType = parameter.Type.IsReferenceType;
+                bool needsNullableSuffix = !alreadyNullable && (isRefType ? makeNullableEnabled : true);
+                string propertyType = needsNullableSuffix ? $"{typeString}?" : typeString;
 
                 codeBuilder.AppendLine($"// Parameter: {parameter.Name}: {parameter.Type}");
-                codeBuilder.AppendLine(
-                    $"public {required}{parameter.Type} {parameter.Name} {{ get; set; }}{propertyInitializer}");
+                codeBuilder.AppendLine($"public {propertyType} {parameter.Name} {{ get; set; }}");
             }
 
             codeBuilder.AppendLine($"public {recordSymbol.Name} Build()");
             codeBuilder.AppendLine("{");
             using (codeBuilder.BeginBlock())
             {
+                foreach (var parameter in primaryCtor.Parameters)
+                {
+                    string typeString = $"{parameter.Type}";
+                    bool alreadyNullable = typeString.EndsWith("?");
+                    bool isRefType = parameter.Type.IsReferenceType;
+                    bool isNullableRef = makeNullableEnabled && parameter.NullableAnnotation == NullableAnnotation.Annotated;
+                    if (!isRefType && !alreadyNullable)
+                        codeBuilder.AppendLine($"if (!this.{parameter.Name}.HasValue) throw new InvalidOperationException(\"'{parameter.Name}' must be set before calling Build().\");");
+                    else if (isRefType && !isNullableRef)
+                        codeBuilder.AppendLine($"if (this.{parameter.Name} is null) throw new InvalidOperationException(\"'{parameter.Name}' must be set before calling Build().\");");
+                }
+
                 codeBuilder.Append("return new(");
-                codeBuilder.Append(string.Join(", ", primaryCtor.Parameters.Select(x => $"this.{x.Name}")));
+                codeBuilder.Append(string.Join(", ", primaryCtor.Parameters.Select(x =>
+                {
+                    bool isNonNullableValueType = !x.Type.IsReferenceType && !$"{x.Type}".EndsWith("?");
+                    return isNonNullableValueType ? $"this.{x.Name}.Value" : $"this.{x.Name}";
+                })));
                 codeBuilder.AppendLine(");");
             }
 

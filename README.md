@@ -68,36 +68,16 @@ Details can be found in the [Wiki](https://github.com/StefanStolz/ShadowWriter/w
 
 ### 4. Generate Builders for Records
 
-The **Builder** feature in ShadowWriter automatically generates builder classes for your `record` types. This significantly reduces boilerplate when constructing complex objects, especially with optional and nullable parameters or when you want to use a fluent API pattern for object creation.
-
-#### Usage
-
-To enable builder generation, simply annotate your partial `record` with the `[Builder]` attribute:
-
-```csharp 
-[Builder] 
-public partial record WithBuilder(int Number);
-```
-
-The generator will create a corresponding builder class (e.g., `WithBuilder.Builder`) with mutable Properties for each Parameter.
-
-#### Examples
-
-A variety of record types are supported:
-
-```csharp 
-// Record with a single value type 
-[Builder] 
-public partial record WithBuilder(int Number);
-```
-
-The generated builder enables you to create instances using a clear, chainable API. For example:
+The **Builder** feature automatically generates a nested `Builder` class for any `partial record` annotated with `[Builder]`. Each parameter becomes a nullable property, and `Build()` validates that all non-nullable parameters are set before constructing the record.
 
 ```csharp
-var builder = new WithBuilder.Builder();
-builder.Number = 1;
-var item = builder.Build();
+[Builder]
+public partial record Order(int Quantity, string? Note);
+
+var order = new Order.Builder { Quantity = 3 }.Build();
 ```
+
+See [Builder documentation](docs/Builder.md) for full details, generated code examples, and validation rules.
 
 ## 📦 Installation
 

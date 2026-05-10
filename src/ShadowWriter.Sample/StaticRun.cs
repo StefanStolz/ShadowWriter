@@ -50,5 +50,10 @@ public static class StaticRun
 
         var item2 = b2.Build();
         Console.WriteLine(item2);
+
+
+        var b3 = new WithBuilderAndNullableArgs.Builder();
+        b3.Text = "abc";
+
     }
 }

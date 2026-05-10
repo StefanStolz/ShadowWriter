@@ -17,3 +17,7 @@ public partial record WithBuilderMultiple(int Number, int Number2, bool Enabled)
 [Builder]
 public partial record WithBuilderWithNonNullableString(string Text, Stream Stream);
 
+
+[Builder]
+public partial record WithBuilderAndNullableArgs(string Text, string? OtherText);
+

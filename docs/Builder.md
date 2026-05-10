@@ -48,7 +48,7 @@ public partial record WithBuilderMultiple(int Number, int Number2, bool Enabled)
 
 ### Non-Nullable Reference Types
 
-When Nullable Reference Types (NRT) are enabled, `string` properties are initialized to `""` and other reference-type properties receive the `required` modifier:
+All reference-type properties are generated as nullable (`T?`). When NRT is enabled, `Build()` validates that every non-nullable parameter has been set before constructing the record:
 
 ```csharp
 [Builder]
@@ -60,11 +60,13 @@ Generated builder (NRT enabled):
 ```csharp
 public sealed class Builder
 {
-    public string Text { get; set; } = "";
-    public required Stream Stream { get; set; }
+    public string? Text { get; set; }
+    public Stream? Stream { get; set; }
 
     public WithBuilderWithNonNullableString Build()
     {
+        if (this.Text is null) throw new InvalidOperationException("'Text' must be set before calling Build().");
+        if (this.Stream is null) throw new InvalidOperationException("'Stream' must be set before calling Build().");
         return new(this.Text, this.Stream);
     }
 }
@@ -74,8 +76,8 @@ public sealed class Builder
 
 For each annotated record the generator emits a partial record extension containing a single nested `sealed class Builder`. The builder has:
 
-- One mutable property per record parameter, mirroring its name and type
-- A `Build()` method that constructs the record via its primary constructor
+- One mutable nullable property per record parameter
+- A `Build()` method that validates required parameters and constructs the record via its primary constructor
 
 Example — input:
 
@@ -91,15 +93,29 @@ public partial record WithBuilder
 {
     public sealed class Builder
     {
-        public int Number { get; set; }
+        public int? Number { get; set; }
 
         public WithBuilder Build()
         {
-            return new(this.Number);
+            if (!this.Number.HasValue) throw new InvalidOperationException("'Number' must be set before calling Build().");
+            return new(this.Number.Value);
         }
     }
 }
 ```
+
+## Build() Validation
+
+The `Build()` method guards every non-nullable parameter before calling the constructor. The guard type depends on the parameter kind:
+
+| Parameter kind | Builder property | Guard in `Build()` | Constructor argument |
+|---|---|---|---|
+| Non-nullable value type (`int`, `bool`, `DateTime`) | `int?` | `if (!this.P.HasValue) throw ...` | `this.P.Value` |
+| Non-nullable reference type (`string`, `Stream`) | `string?` | `if (this.P is null) throw ...` | `this.P` |
+| Nullable value type (`int?`, `bool?`) | `int?` | _(none — null is valid)_ | `this.P` |
+| Nullable reference type (`string?`, `Stream?`) | `string?` | _(none — null is valid)_ | `this.P` |
+
+The exception thrown is `System.InvalidOperationException` with message `'<PropertyName>' must be set before calling Build().`
 
 ## Requirements
 
@@ -121,7 +137,7 @@ public record MyRecord(int Value); // will not compile with generated partial
 - **File naming**: The generator emits `{CleanedNamespace}{RecordName}.g.cs` into the compilation.
 - **Attribute visibility**: `[Builder]` is generated as an `internal sealed` marker attribute with no parameters — it is only visible within the consuming project.
 - **Emitted attributes**: Generated code is decorated with `[CompilerGenerated]` and `[GeneratedCode("ShadowWriter", "...")]`.
-- **NRT awareness**: The generator reads the compilation's `NullableContextOptions` to decide whether to add `required` modifiers and string initializers.
+- **NRT awareness**: The generator reads the compilation's `NullableContextOptions` to decide which reference-type properties require null guards in `Build()` and whether to emit `#nullable enable` in the generated file.
 
 ## Version Compatibility
 

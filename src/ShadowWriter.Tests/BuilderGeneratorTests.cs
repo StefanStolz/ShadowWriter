@@ -110,16 +110,61 @@ public class BuilderGeneratorTests
                                      public partial record TheRecord
                                      {
                                          public sealed class Builder
-                                     {
-                                           // Parameter: Value: string
-                                       public string Value { get; set; } = "";
-                                       public TheRecord Build()
-                                       {
-                                         return new(this.Value    );
-                                       }
-
-                                     }
+                                         {
+                                             // Parameter: Value: string
+                                             public string? Value { get; set; }
+                                             public TheRecord Build()
+                                             {
+                                                 if (this.Value is null) throw new InvalidOperationException("'Value' must be set before calling Build().");
+                                                 return new(this.Value);
+                                             }
+                                         }
                                      }
                                      """).IgnoreWhiteSpace);
+    }
+
+    [Test]
+    public async Task CreateBuilderForRecordWithValueTypes()
+    {
+        var input = """
+                    using System;
+
+                    namespace TestNamespace;
+
+                    [ShadowWriter.Builder]
+                    public partial record TheRecord(int Count, int? OptionalCount);
+                    """;
+
+        var generator = new BuilderGenerator();
+        var driver = CSharpGeneratorDriver.Create(generator);
+
+        var compilationOptions = new CSharpCompilationOptions(
+            OutputKind.DynamicallyLinkedLibrary,
+            nullableContextOptions: NullableContextOptions.Enable);
+
+        var runtimeRef = MetadataReference.CreateFromFile(typeof(object).Assembly.Location);
+        var compilation = CSharpCompilation.Create(nameof(BuilderGeneratorTests),
+            [CSharpSyntaxTree.ParseText(input)],
+            references: [runtimeRef],
+            options: compilationOptions);
+
+        var runResult = driver.RunGenerators(compilation).GetRunResult();
+
+        var generated = runResult.GeneratedTrees.Single(x => x.FilePath.Contains("TheRecord") && x.FilePath.Contains("Builder"));
+        var code = (await generated.GetTextAsync()).ToString();
+
+        await TestContext.Out.WriteLineAsync(code);
+
+        var root = await generated.GetRootAsync();
+        var generatedRecord = root.DescendantNodes().OfType<RecordDeclarationSyntax>().Single();
+        var recordVerifier = SyntaxVerifier.From(generatedRecord);
+        var builderClass = recordVerifier.ShouldHaveInnerClass("Builder");
+        builderClass.ShouldHaveProperty("Count").WithType("int?");
+        builderClass.ShouldHaveProperty("OptionalCount").WithType("int?");
+        builderClass.ShouldHaveMethod("Build").WithReturnType("TheRecord");
+
+        Assert.That(code, Does.Contain("this.Count.Value"));
+        Assert.That(code, Does.Contain("!this.Count.HasValue"));
+        Assert.That(code, Does.Not.Contain("!this.OptionalCount.HasValue"));
     }
 }
