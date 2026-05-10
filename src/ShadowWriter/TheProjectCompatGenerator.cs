@@ -12,7 +12,7 @@ public sealed class TheProjectCompatGenerator : IIncrementalGenerator
     private const string Namespace = "ShadowWriter";
     private const string ObsoleteMessage =
         "TheProject is deprecated. Set <ShadowWriter_EnableProjectInfo>true</ShadowWriter_EnableProjectInfo> " +
-        "in your .csproj and use ShadowWriter.ProjectInfo instead. See Details: https://github.com/StefanStolz/ShadowWriter/wiki/ProjectInfo";
+        "in your .csproj and use ShadowWriter.ProjectInfo instead. See Details: https://github.com/StefanStolz/ShadowWriter/blob/main/docs/ProjectInfo.md";
 
     public TheProjectCompatGenerator()
     {

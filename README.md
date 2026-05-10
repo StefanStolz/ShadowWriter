@@ -29,7 +29,16 @@ Embeds values from the project file (`*.csproj`) directly into your source code.
 This is useful for build metadata, version numbers, or project-specific configuration.
 
 #### Available Properties
-The generated `TheProject` class provides the following static properties:
+The generated `ProjectInfo` class provides the following static properties:
+
+#### Enabling the Generator
+The generator is **opt-in** and must be enabled in your `.csproj` file:
+
+```xml
+<PropertyGroup>
+  <ShadowWriter_EnableProjectInfo>true</ShadowWriter_EnableProjectInfo>
+</PropertyGroup>
+```
 
 | Property | Description | Example |
 |----------|-------------|---------|
@@ -44,9 +53,9 @@ The generated `TheProject` class provides the following static properties:
 
 ```csharp
 // Access project information anywhere in your code 
-Console.WriteLine($"Project Name: {TheProject.Name}"); 
-Console.WriteLine($"Project Version: {TheProject.Version}"); 
-Console.WriteLine($"Project Output Directory: {TheProject.OutDir}");
+Console.WriteLine($"Project Name: {ProjectInfo.Name}"); 
+Console.WriteLine($"Project Version: {ProjectInfo.Version}"); 
+Console.WriteLine($"Project Output Directory: {ProjectInfo.OutDir}");
 ```
 
 
