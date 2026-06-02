@@ -112,10 +112,9 @@ public class BuilderGeneratorTests
                                          public sealed class Builder
                                          {
                                              // Parameter: Value: string
-                                             public string? Value { get; set; }
+                                             public string Value { get; set; } = "";
                                              public TheRecord Build()
                                              {
-                                                 if (this.Value is null) throw new InvalidOperationException("'Value' must be set before calling Build().");
                                                  return new(this.Value);
                                              }
                                          }
@@ -159,12 +158,109 @@ public class BuilderGeneratorTests
         var generatedRecord = root.DescendantNodes().OfType<RecordDeclarationSyntax>().Single();
         var recordVerifier = SyntaxVerifier.From(generatedRecord);
         var builderClass = recordVerifier.ShouldHaveInnerClass("Builder");
-        builderClass.ShouldHaveProperty("Count").WithType("int?");
+        builderClass.ShouldHaveProperty("Count").WithType("int");
         builderClass.ShouldHaveProperty("OptionalCount").WithType("int?");
         builderClass.ShouldHaveMethod("Build").WithReturnType("TheRecord");
 
-        Assert.That(code, Does.Contain("this.Count.Value"));
-        Assert.That(code, Does.Contain("!this.Count.HasValue"));
+        // By default non-nullable value types are initialized, not required.
+        Assert.That(code, Does.Contain("public int Count { get; set; } = default;"));
+        Assert.That(code, Does.Not.Contain("this.Count.Value"));
+        Assert.That(code, Does.Not.Contain("!this.Count.HasValue"));
         Assert.That(code, Does.Not.Contain("!this.OptionalCount.HasValue"));
+    }
+
+    [Test]
+    public async Task DefaultInitializesStrings()
+    {
+        var code = await GenerateBuilder("public partial record TheRecord(string Text);");
+
+        Assert.That(code, Does.Contain("public string Text { get; set; } = \"\";"));
+        Assert.That(code, Does.Not.Contain("'Text' must be set"));
+        Assert.That(code, Does.Contain("return new(this.Text"));
+    }
+
+    [Test]
+    public async Task DefaultInitializesValueTypes()
+    {
+        var code = await GenerateBuilder("public partial record TheRecord(int Count);");
+
+        Assert.That(code, Does.Contain("public int Count { get; set; } = default;"));
+        Assert.That(code, Does.Not.Contain("'Count' must be set"));
+        Assert.That(code, Does.Not.Contain("this.Count.HasValue"));
+        Assert.That(code, Does.Not.Contain("this.Count.Value"));
+        Assert.That(code, Does.Contain("return new(this.Count"));
+    }
+
+    [Test]
+    public async Task RequireValueTypesRestoresRequiredBehavior()
+    {
+        var code = await GenerateBuilder(
+            "[ShadowWriter.Builder(RequireValueTypes = true)] public partial record TheRecord(int Count);",
+            applyAttribute: false);
+
+        Assert.That(code, Does.Contain("public int? Count { get; set; }"));
+        Assert.That(code, Does.Contain("!this.Count.HasValue"));
+        Assert.That(code, Does.Contain("this.Count.Value"));
+    }
+
+    [Test]
+    public async Task RequireStringsRestoresRequiredBehavior()
+    {
+        var code = await GenerateBuilder(
+            "[ShadowWriter.Builder(RequireStrings = true)] public partial record TheRecord(string Text);",
+            applyAttribute: false);
+
+        Assert.That(code, Does.Contain("public string? Text { get; set; }"));
+        Assert.That(code, Does.Contain("'Text' must be set"));
+    }
+
+    [Test]
+    public async Task FlagsAreIndependentAndStringIsNotAValueType()
+    {
+        // RequireStrings only: Text stays required, Count is still default-initialized.
+        var code = await GenerateBuilder(
+            "[ShadowWriter.Builder(RequireStrings = true)] public partial record TheRecord(string Text, int Count);",
+            applyAttribute: false);
+
+        Assert.That(code, Does.Contain("public string? Text { get; set; }"));
+        Assert.That(code, Does.Contain("'Text' must be set"));
+        Assert.That(code, Does.Contain("public int Count { get; set; } = default;"));
+        Assert.That(code, Does.Not.Contain("'Count' must be set"));
+    }
+
+    private static async Task<string> GenerateBuilder(string declaration, bool applyAttribute = true)
+    {
+        var typeDeclaration = applyAttribute ? $"[ShadowWriter.Builder]\n{declaration}" : declaration;
+
+        var input = $$"""
+                      using System;
+
+                      namespace TestNamespace;
+
+                      {{typeDeclaration}}
+                      """;
+
+        var generator = new BuilderGenerator();
+        var driver = CSharpGeneratorDriver.Create(generator);
+
+        var compilationOptions = new CSharpCompilationOptions(
+            OutputKind.DynamicallyLinkedLibrary,
+            nullableContextOptions: NullableContextOptions.Enable);
+
+        var runtimeRef = MetadataReference.CreateFromFile(typeof(object).Assembly.Location);
+        var compilation = CSharpCompilation.Create(nameof(BuilderGeneratorTests),
+            [CSharpSyntaxTree.ParseText(input)],
+            references: [runtimeRef],
+            options: compilationOptions);
+
+        var runResult = driver.RunGenerators(compilation).GetRunResult();
+
+        var generated = runResult.GeneratedTrees.Single(x =>
+            x.FilePath.Contains("TheRecord") && x.FilePath.Contains("Builder"));
+        var code = (await generated.GetTextAsync()).ToString();
+
+        await TestContext.Out.WriteLineAsync(code);
+
+        return code;
     }
 }

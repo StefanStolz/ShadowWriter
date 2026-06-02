@@ -21,3 +21,7 @@ public partial record WithBuilderWithNonNullableString(string Text, Stream Strea
 [Builder]
 public partial record WithBuilderAndNullableArgs(string Text, string? OtherText);
 
+
+[Builder(RequireStrings = true, RequireValueTypes = true)]
+public partial record WithBuilderRequired(string Text, int Number, bool Enabled);
+

@@ -14,9 +14,11 @@ namespace ShadowWriter;
 public record BuilderGeneratorArgs(
     bool BuildAttributeFound,
     bool IsRecord,
-    RecordDeclarationSyntax? RecordDeclarationSyntax)
+    RecordDeclarationSyntax? RecordDeclarationSyntax,
+    bool RequireStrings,
+    bool RequireValueTypes)
 {
-    public static BuilderGeneratorArgs Empty => new(false, false, null);
+    public static BuilderGeneratorArgs Empty => new(false, false, null, false, false);
 }
 
 [Generator]
@@ -40,7 +42,9 @@ public sealed class BuilderGenerator : IIncrementalGenerator
                                                 [System.AttributeUsage(AttributeTargets.Class)]
                                                 internal sealed class {{BuilderAttributeName}} : System.Attribute
                                                 {
+                                                    public bool RequireStrings { get; set; }
 
+                                                    public bool RequireValueTypes { get; set; }
                                                 }
                                             }
                                             """;
@@ -94,7 +98,8 @@ public sealed class BuilderGenerator : IIncrementalGenerator
 
             bool makeNullableEnabled = compilation.Options.NullableContextOptions == NullableContextOptions.Enable;
 
-            var body = this.CreateClassBody(recordDeclarationSyntax, recordSymbol, compilation);
+            var body = this.CreateClassBody(recordDeclarationSyntax, recordSymbol, compilation,
+                builderGeneratorArgs.RequireStrings, builderGeneratorArgs.RequireValueTypes);
 
             var accessibility = ToCodeString(recordSymbol.DeclaredAccessibility);
 
@@ -122,7 +127,7 @@ public sealed class BuilderGenerator : IIncrementalGenerator
     }
 
     private string CreateClassBody(RecordDeclarationSyntax recordSyntax, INamedTypeSymbol recordSymbol,
-        Compilation compilation)
+        Compilation compilation, bool requireStrings, bool requireValueTypes)
     {
         var codeBuilder = new IndentedStringBuilder("  ", 1);
 
@@ -134,14 +139,24 @@ public sealed class BuilderGenerator : IIncrementalGenerator
 
             foreach (var parameter in primaryCtor.Parameters)
             {
-                string typeString = $"{parameter.Type}";
-                bool alreadyNullable = typeString.EndsWith("?");
-                bool isRefType = parameter.Type.IsReferenceType;
-                bool needsNullableSuffix = !alreadyNullable && (isRefType ? makeNullableEnabled : true);
-                string propertyType = needsNullableSuffix ? $"{typeString}?" : typeString;
-
                 codeBuilder.AppendLine($"// Parameter: {parameter.Name}: {parameter.Type}");
-                codeBuilder.AppendLine($"public {propertyType} {parameter.Name} {{ get; set; }}");
+
+                if (IsDefaultInitialized(parameter, requireStrings, requireValueTypes))
+                {
+                    bool isString = parameter.Type.SpecialType == SpecialType.System_String;
+                    string initializer = isString ? "\"\"" : "default";
+                    codeBuilder.AppendLine($"public {parameter.Type} {parameter.Name} {{ get; set; }} = {initializer};");
+                }
+                else
+                {
+                    string typeString = $"{parameter.Type}";
+                    bool alreadyNullable = typeString.EndsWith("?");
+                    bool isRefType = parameter.Type.IsReferenceType;
+                    bool needsNullableSuffix = !alreadyNullable && (isRefType ? makeNullableEnabled : true);
+                    string propertyType = needsNullableSuffix ? $"{typeString}?" : typeString;
+
+                    codeBuilder.AppendLine($"public {propertyType} {parameter.Name} {{ get; set; }}");
+                }
             }
 
             codeBuilder.AppendLine($"public {recordSymbol.Name} Build()");
@@ -150,6 +165,8 @@ public sealed class BuilderGenerator : IIncrementalGenerator
             {
                 foreach (var parameter in primaryCtor.Parameters)
                 {
+                    if (IsDefaultInitialized(parameter, requireStrings, requireValueTypes)) continue;
+
                     string typeString = $"{parameter.Type}";
                     bool alreadyNullable = typeString.EndsWith("?");
                     bool isRefType = parameter.Type.IsReferenceType;
@@ -164,7 +181,8 @@ public sealed class BuilderGenerator : IIncrementalGenerator
                 codeBuilder.Append(string.Join(", ", primaryCtor.Parameters.Select(x =>
                 {
                     bool isNonNullableValueType = !x.Type.IsReferenceType && !$"{x.Type}".EndsWith("?");
-                    return isNonNullableValueType ? $"this.{x.Name}.Value" : $"this.{x.Name}";
+                    bool useValue = isNonNullableValueType && !IsDefaultInitialized(x, requireStrings, requireValueTypes);
+                    return useValue ? $"this.{x.Name}.Value" : $"this.{x.Name}";
                 })));
                 codeBuilder.AppendLine(");");
             }
@@ -180,13 +198,44 @@ public sealed class BuilderGenerator : IIncrementalGenerator
                  """;
     }
 
+    private static bool IsDefaultInitialized(IParameterSymbol parameter, bool requireStrings, bool requireValueTypes)
+    {
+        bool alreadyNullable = $"{parameter.Type}".EndsWith("?");
+        if (alreadyNullable) return false; // already optional, behavior unchanged
+
+        if (parameter.Type.SpecialType == SpecialType.System_String) return !requireStrings;
+        if (parameter.Type.IsValueType) return !requireValueTypes;
+
+        return false; // other reference types stay required
+    }
+
     private static BuilderGeneratorArgs GetBuilderGeneratorArgs(GeneratorAttributeSyntaxContext syntaxContext)
     {
         var symbol = syntaxContext.SemanticModel.GetDeclaredSymbol(syntaxContext.TargetNode) as INamedTypeSymbol;
         if (symbol is null) return BuilderGeneratorArgs.Empty;
         if (!IsRecord(symbol)) return BuilderGeneratorArgs.Empty;
 
-        return new BuilderGeneratorArgs(true, true, syntaxContext.TargetNode as RecordDeclarationSyntax);
+        var attribute = syntaxContext.Attributes.FirstOrDefault();
+        bool requireStrings = GetBoolNamedArg(attribute, "RequireStrings");
+        bool requireValueTypes = GetBoolNamedArg(attribute, "RequireValueTypes");
+
+        return new BuilderGeneratorArgs(true, true, syntaxContext.TargetNode as RecordDeclarationSyntax,
+            requireStrings, requireValueTypes);
+    }
+
+    private static bool GetBoolNamedArg(AttributeData? attribute, string name)
+    {
+        if (attribute is null) return false;
+
+        foreach (var namedArgument in attribute.NamedArguments)
+        {
+            if (namedArgument.Key == name)
+            {
+                return namedArgument.Value.Value is true;
+            }
+        }
+
+        return false;
     }
 
     private static string ToCodeString(Accessibility value)
