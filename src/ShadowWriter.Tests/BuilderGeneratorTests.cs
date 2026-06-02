@@ -228,12 +228,77 @@ public class BuilderGeneratorTests
         Assert.That(code, Does.Not.Contain("'Count' must be set"));
     }
 
+    [Test]
+    public async Task DefaultInitializesArrays()
+    {
+        var code = await GenerateBuilder("public partial record TheRecord(int[] Tags);");
+
+        Assert.That(code, Does.Contain("public int[] Tags { get; set; } = [];"));
+        Assert.That(code, Does.Not.Contain("'Tags' must be set"));
+        Assert.That(code, Does.Contain("return new(this.Tags"));
+    }
+
+    [Test]
+    public async Task DefaultInitializesLists()
+    {
+        var code = await GenerateBuilder("public partial record TheRecord(List<string> Names);");
+
+        Assert.That(code, Does.Contain("Names { get; set; } = [];"));
+        Assert.That(code, Does.Not.Contain("'Names' must be set"));
+    }
+
+    [Test]
+    public async Task DefaultInitializesEnumerables()
+    {
+        var code = await GenerateBuilder("public partial record TheRecord(IEnumerable<int> Ids);");
+
+        Assert.That(code, Does.Contain("Ids { get; set; } = [];"));
+        Assert.That(code, Does.Not.Contain("'Ids' must be set"));
+    }
+
+    [Test]
+    public async Task RequireCollectionsRestoresRequiredBehavior()
+    {
+        var code = await GenerateBuilder(
+            "[ShadowWriter.Builder(RequireCollections = true)] public partial record TheRecord(int[] Tags);",
+            applyAttribute: false);
+
+        Assert.That(code, Does.Contain("public int[]? Tags { get; set; }"));
+        Assert.That(code, Does.Contain("'Tags' must be set"));
+        Assert.That(code, Does.Not.Contain("= [];"));
+    }
+
+    [Test]
+    public async Task DictionariesStayRequiredByDefault()
+    {
+        var code = await GenerateBuilder("public partial record TheRecord(Dictionary<int, string> Map);");
+
+        // [] cannot construct a dictionary, so dictionaries are not treated as collections.
+        Assert.That(code, Does.Not.Contain("Map { get; set; } = [];"));
+        Assert.That(code, Does.Contain("'Map' must be set"));
+    }
+
+    [Test]
+    public async Task RequireCollectionsIsIndependentOfOtherFlags()
+    {
+        // RequireCollections only: Tags required, Text still default-initialized.
+        var code = await GenerateBuilder(
+            "[ShadowWriter.Builder(RequireCollections = true)] public partial record TheRecord(string Text, int[] Tags);",
+            applyAttribute: false);
+
+        Assert.That(code, Does.Contain("public string Text { get; set; } = \"\";"));
+        Assert.That(code, Does.Not.Contain("'Text' must be set"));
+        Assert.That(code, Does.Contain("public int[]? Tags { get; set; }"));
+        Assert.That(code, Does.Contain("'Tags' must be set"));
+    }
+
     private static async Task<string> GenerateBuilder(string declaration, bool applyAttribute = true)
     {
         var typeDeclaration = applyAttribute ? $"[ShadowWriter.Builder]\n{declaration}" : declaration;
 
         var input = $$"""
                       using System;
+                      using System.Collections.Generic;
 
                       namespace TestNamespace;
 

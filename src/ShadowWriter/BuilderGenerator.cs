@@ -16,9 +16,10 @@ public record BuilderGeneratorArgs(
     bool IsRecord,
     RecordDeclarationSyntax? RecordDeclarationSyntax,
     bool RequireStrings,
-    bool RequireValueTypes)
+    bool RequireValueTypes,
+    bool RequireCollections)
 {
-    public static BuilderGeneratorArgs Empty => new(false, false, null, false, false);
+    public static BuilderGeneratorArgs Empty => new(false, false, null, false, false, false);
 }
 
 [Generator]
@@ -45,6 +46,8 @@ public sealed class BuilderGenerator : IIncrementalGenerator
                                                     public bool RequireStrings { get; set; }
 
                                                     public bool RequireValueTypes { get; set; }
+
+                                                    public bool RequireCollections { get; set; }
                                                 }
                                             }
                                             """;
@@ -99,7 +102,8 @@ public sealed class BuilderGenerator : IIncrementalGenerator
             bool makeNullableEnabled = compilation.Options.NullableContextOptions == NullableContextOptions.Enable;
 
             var body = this.CreateClassBody(recordDeclarationSyntax, recordSymbol, compilation,
-                builderGeneratorArgs.RequireStrings, builderGeneratorArgs.RequireValueTypes);
+                builderGeneratorArgs.RequireStrings, builderGeneratorArgs.RequireValueTypes,
+                builderGeneratorArgs.RequireCollections);
 
             var accessibility = ToCodeString(recordSymbol.DeclaredAccessibility);
 
@@ -127,7 +131,7 @@ public sealed class BuilderGenerator : IIncrementalGenerator
     }
 
     private string CreateClassBody(RecordDeclarationSyntax recordSyntax, INamedTypeSymbol recordSymbol,
-        Compilation compilation, bool requireStrings, bool requireValueTypes)
+        Compilation compilation, bool requireStrings, bool requireValueTypes, bool requireCollections)
     {
         var codeBuilder = new IndentedStringBuilder("  ", 1);
 
@@ -141,10 +145,12 @@ public sealed class BuilderGenerator : IIncrementalGenerator
             {
                 codeBuilder.AppendLine($"// Parameter: {parameter.Name}: {parameter.Type}");
 
-                if (IsDefaultInitialized(parameter, requireStrings, requireValueTypes))
+                if (IsDefaultInitialized(parameter, requireStrings, requireValueTypes, requireCollections))
                 {
-                    bool isString = parameter.Type.SpecialType == SpecialType.System_String;
-                    string initializer = isString ? "\"\"" : "default";
+                    string initializer =
+                        parameter.Type.SpecialType == SpecialType.System_String ? "\"\"" :
+                        IsCollection(parameter.Type) ? "[]" :
+                        "default";
                     codeBuilder.AppendLine($"public {parameter.Type} {parameter.Name} {{ get; set; }} = {initializer};");
                 }
                 else
@@ -165,7 +171,7 @@ public sealed class BuilderGenerator : IIncrementalGenerator
             {
                 foreach (var parameter in primaryCtor.Parameters)
                 {
-                    if (IsDefaultInitialized(parameter, requireStrings, requireValueTypes)) continue;
+                    if (IsDefaultInitialized(parameter, requireStrings, requireValueTypes, requireCollections)) continue;
 
                     string typeString = $"{parameter.Type}";
                     bool alreadyNullable = typeString.EndsWith("?");
@@ -181,7 +187,7 @@ public sealed class BuilderGenerator : IIncrementalGenerator
                 codeBuilder.Append(string.Join(", ", primaryCtor.Parameters.Select(x =>
                 {
                     bool isNonNullableValueType = !x.Type.IsReferenceType && !$"{x.Type}".EndsWith("?");
-                    bool useValue = isNonNullableValueType && !IsDefaultInitialized(x, requireStrings, requireValueTypes);
+                    bool useValue = isNonNullableValueType && !IsDefaultInitialized(x, requireStrings, requireValueTypes, requireCollections);
                     return useValue ? $"this.{x.Name}.Value" : $"this.{x.Name}";
                 })));
                 codeBuilder.AppendLine(");");
@@ -198,15 +204,47 @@ public sealed class BuilderGenerator : IIncrementalGenerator
                  """;
     }
 
-    private static bool IsDefaultInitialized(IParameterSymbol parameter, bool requireStrings, bool requireValueTypes)
+    private static bool IsDefaultInitialized(IParameterSymbol parameter, bool requireStrings,
+        bool requireValueTypes, bool requireCollections)
     {
         bool alreadyNullable = $"{parameter.Type}".EndsWith("?");
         if (alreadyNullable) return false; // already optional, behavior unchanged
 
+        // Order matters: string is IEnumerable<char>, so it must be handled before collections,
+        // and collections (reference types) before the value-type fallback.
         if (parameter.Type.SpecialType == SpecialType.System_String) return !requireStrings;
+        if (IsCollection(parameter.Type)) return !requireCollections;
         if (parameter.Type.IsValueType) return !requireValueTypes;
 
         return false; // other reference types stay required
+    }
+
+    private static bool IsCollection(ITypeSymbol type)
+    {
+        if (type is IArrayTypeSymbol) return true;
+        if (!type.IsReferenceType) return false; // struct collections stay under the value-type rule
+        if (IsDictionary(type)) return false; // [] cannot construct a dictionary
+
+        if (type.OriginalDefinition.SpecialType == SpecialType.System_Collections_Generic_IEnumerable_T)
+        {
+            return true;
+        }
+
+        return type.AllInterfaces.Any(i =>
+            i.OriginalDefinition.SpecialType == SpecialType.System_Collections_Generic_IEnumerable_T);
+    }
+
+    private static bool IsDictionary(ITypeSymbol type)
+    {
+        return IsDictionaryDefinition(type) || type.AllInterfaces.Any(IsDictionaryDefinition);
+    }
+
+    private static bool IsDictionaryDefinition(ITypeSymbol type)
+    {
+        var definition = type.OriginalDefinition;
+        return definition.ContainingNamespace?.ToDisplayString() == "System.Collections.Generic" &&
+               (definition.MetadataName == "IDictionary`2" ||
+                definition.MetadataName == "IReadOnlyDictionary`2");
     }
 
     private static BuilderGeneratorArgs GetBuilderGeneratorArgs(GeneratorAttributeSyntaxContext syntaxContext)
@@ -218,9 +256,10 @@ public sealed class BuilderGenerator : IIncrementalGenerator
         var attribute = syntaxContext.Attributes.FirstOrDefault();
         bool requireStrings = GetBoolNamedArg(attribute, "RequireStrings");
         bool requireValueTypes = GetBoolNamedArg(attribute, "RequireValueTypes");
+        bool requireCollections = GetBoolNamedArg(attribute, "RequireCollections");
 
         return new BuilderGeneratorArgs(true, true, syntaxContext.TargetNode as RecordDeclarationSyntax,
-            requireStrings, requireValueTypes);
+            requireStrings, requireValueTypes, requireCollections);
     }
 
     private static bool GetBoolNamedArg(AttributeData? attribute, string name)
